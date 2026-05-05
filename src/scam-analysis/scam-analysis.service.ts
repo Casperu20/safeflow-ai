@@ -1,4 +1,5 @@
 import { ScamAiAnalyzer, ScamAiAnalysisError } from './ai/scam-ai-analyzer';
+import { Injectable } from '@nestjs/common';
 import { ScamAnalysisResponseDto } from './dto/scam-analysis-response.dto';
 import { generateAnalysisId } from './utils/analysis-id';
 import {
@@ -6,6 +7,7 @@ import {
   ScamAnalysisErrorCode,
 } from './errors/scam-analysis.errors';
 
+@Injectable()
 export class ScamAnalysisService {
   constructor(private readonly scamAiAnalyzer: ScamAiAnalyzer) {}
 

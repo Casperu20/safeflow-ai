@@ -1,9 +1,7 @@
-import { randomUUID } from 'crypto';
-
 /**
  * Generates a UUID v4 to uniquely identify a single analysis run.
- * Uses Node's built-in crypto module — no external dependency required.
+ * Uses the Web Crypto global available in Node 19+ — no import required.
  */
 export function generateAnalysisId(): string {
-  return `analysis_${randomUUID()}`;
+  return `analysis_${globalThis.crypto.randomUUID()}`;
 }

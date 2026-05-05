@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { Injectable } from '@nestjs/common';
 import { ScamAiResponseSchema, ScamAiResponse } from './scam-ai.schema';
 import {
   SCAM_ANALYSIS_SYSTEM_PROMPT,
@@ -6,6 +7,7 @@ import {
 } from './scam-ai.prompt';
 import { normaliseScore, mapScoreToRiskLevel } from './scam-risk.mapper';
 
+@Injectable()
 export class ScamAiAnalyzer {
   constructor(private readonly openai: OpenAI) {}
 
