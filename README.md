@@ -13,7 +13,7 @@ SafeFlow AI provides a REST API that returns:
 
 ### Key Features
 
-✅ **AI-Powered Detection** — OpenAI GPT-4.1-mini  
+✅ **AI-Powered Detection** — OpenAI GPT-4.1  
 ✅ **Normalized Risk Scores** — Always [0, 100] integer  
 ✅ **Risk Level Recomputation** — Never trusts model's classification  
 ✅ **Evidence-Based** — Extracts specific snippets from analyzed text  

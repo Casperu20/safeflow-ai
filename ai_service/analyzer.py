@@ -70,7 +70,7 @@ class ScamAiAnalyzer:
         # Call OpenAI API
         try:
             completion = self.openai.chat.completions.create(
-                model="gpt-4.1-mini",
+                model="gpt-4.1",
                 response_format={"type": "json_object"},
                 messages=[
                     {"role": "system", "content": SCAM_ANALYSIS_SYSTEM_PROMPT},
