@@ -1,137 +1,38 @@
-# SafeFlow AI
+# SafeFlow AI - Scam Detection Service
 
-A comprehensive scam and fraud risk detection platform combining TypeScript/NestJS backend services with a standalone Python/FastAPI AI microservice.
+A standalone **Python/FastAPI** microservice for analyzing text and detecting scam, fraud, social engineering, and payment redirection risk using OpenAI's GPT model.
 
 ## Overview
 
-SafeFlow AI analyzes text for scam, fraud, social engineering, payment redirection, invoice fraud, impersonation, phishing, urgency pressure, suspicious account changes, and attempts to bypass verification.
+SafeFlow AI provides a REST API that returns:
+- **Risk Score** (0–100, normalized integer)
+- **Risk Level** (low/medium/high)
+- **Detected Scam Type** (e.g., "invoice fraud", "phishing")
+- **Evidence Snippets** from submitted text with severity levels
+- **Risk Indicators** and recommendations
 
 ### Key Features
 
-- **AI-Powered Detection**: OpenAI GPT-4.1-mini for intelligent scam analysis
-- **Risk Scoring**: Normalized risk scores (0–100) with categorical levels (low/medium/high)
-- **Evidence-Based**: Extracts specific evidence snippets from analyzed text
-- **Prompt Injection Protected**: Multi-layer defense against adversarial inputs
-- **Extensible**: Designed to support future ML models (LightGBM, Isolation Forest, graph-based scoring)
-- **Safe Logging**: Never logs raw user content, only safe truncated previews
-- **Dual Architecture**: TypeScript services + Python AI microservice
+✅ **AI-Powered Detection** — OpenAI GPT-4.1-mini  
+✅ **Normalized Risk Scores** — Always [0, 100] integer  
+✅ **Risk Level Recomputation** — Never trusts model's classification  
+✅ **Evidence-Based** — Extracts specific snippets from analyzed text  
+✅ **Prompt Injection Defense** — 3-layer protection against adversarial inputs  
+✅ **Strict Validation** — Pydantic schema validation for all responses  
+✅ **Safe Logging** — Never logs raw user content  
+✅ **Extensible** — Designed to support future ML models (LightGBM, Isolation Forest, etc.)  
+✅ **Comprehensive Tests** — 29 unit tests covering all components  
 
-## Project Structure
+## Quick Start
 
-```
-safeflow-ai/
-├── src/                    # TypeScript/NestJS backend services
-│   ├── main.ts
-│   ├── app.module.ts
-│   └── scam-analysis/
-│       ├── scam-analysis.controller.ts
-│       ├── scam-analysis.service.ts
-│       ├── ai/              # AI integration layer
-│       │   ├── scam-ai-analyzer.ts
-│       │   ├── scam-ai.prompt.ts
-│       │   ├── scam-ai.schema.ts
-│       │   └── scam-risk.mapper.ts
-│       ├── dto/             # Data transfer objects
-│       │   ├── scam-analysis-request.dto.ts
-│       │   ├── scam-analysis-response.dto.ts
-│       │   └── evidence-snippet.dto.ts
-│       ├── errors/
-│       └── utils/
-├── ai-service/             # Python/FastAPI AI microservice (STANDALONE)
-│   ├── __init__.py
-│   ├── main.py             # FastAPI app with /analyze endpoint
-│   ├── analyzer.py         # OpenAI integration
-│   ├── main_service.py     # Service layer
-│   ├── schemas.py          # Pydantic models
-│   ├── prompts.py          # AI prompts
-│   ├── risk_mapper.py      # Score normalization
-│   ├── security.py         # Input validation & injection defense
-│   ├── errors.py           # Error codes & exceptions
-│   └── .env.example        # Environment template
-├── tests/                  # Test suite
-│   ├── test_risk_mapper.py
-│   ├── test_schema.py
-│   └── conftest.py
-├── model/                  # ML model demonstrations
-├── requirements.txt        # All Python dependencies
-├── tsconfig.json
-├── package.json
-└── README.md               # This file
-```
-
-## Python AI Service (Standalone)
-
-### What is the AI Service?
-
-The `ai-service/` folder contains a **standalone FastAPI application** that provides REST API endpoints for scam risk analysis. It can be deployed independently from the TypeScript backend.
-
-### Features
-
-- **FastAPI REST API**: Modern, fast, auto-documented HTTP API
-- **OpenAI Integration**: Direct integration with GPT-4.1-mini
-- **Strict Schema Separation**: AI response schema separate from API DTO
-- **Response Validation**: Pydantic validation of all AI responses
-- **Score Normalization**: All scores normalized to [0, 100] integer range
-- **Risk Level Recomputation**: Always recomputed from normalized score (never trust model)
-- **Prompt Injection Defense**: 3-layer protection against adversarial inputs
-- **Comprehensive Logging**: Safe logging with no raw user text exposure
-
-### API Endpoint
-
-#### POST /analyze
-
-Analyzes text for scam and fraud risk.
-
-**Request:**
-```json
-{
-  "text": "Dear valued customer, please verify your account immediately by clicking this link."
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "riskScore": 82,
-  "riskLevel": "high",
-  "detectedScamType": "phishing",
-  "explanation": "Multiple phishing indicators detected including urgency pressure, suspicious link request, and account verification demand.",
-  "indicators": ["urgency pressure", "link spoofing", "authority impersonation"],
-  "evidence": [
-    {
-      "text": "verify your account immediately",
-      "reason": "Urgency pressure combined with account access request",
-      "severity": "high"
-    },
-    {
-      "text": "clicking this link",
-      "reason": "Suspicious link request typical of phishing",
-      "severity": "high"
-    }
-  ],
-  "recommendation": "Do not click links in unsolicited messages. Verify account status through official channels directly."
-}
-```
-
-**Error Response (4xx/5xx):**
-```json
-{
-  "errorCode": "ANALYSIS_FAILED",
-  "message": "Scam analysis could not be completed. Please try again.",
-  "details": {}
-}
-```
-
-### Setup & Installation
-
-#### Prerequisites
+### Prerequisites
 
 - Python 3.9+
 - OpenAI API key (from https://platform.openai.com/api-keys)
 
-#### Installation
+### Installation
 
-1. **Create a virtual environment (from project root):**
+1. **Create and activate virtual environment:**
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -144,145 +45,207 @@ Analyzes text for scam and fraud risk.
 
 3. **Configure environment:**
    ```bash
-   cp ai-service/.env.example ai-service/.env
-   # Edit ai-service/.env and add your OPENAI_API_KEY
+   cp ai_service/.env.example ai_service/.env
+   # Edit ai_service/.env and add your OPENAI_API_KEY
    ```
 
 ### Running the Service
 
 **Development (with auto-reload):**
 ```bash
-cd ai-service
-uvicorn main:app --reload
+uvicorn ai_service.main:app --reload
 ```
 
 **Production:**
 ```bash
-cd ai-service
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn ai_service.main:app --host 0.0.0.0 --port 8000
 ```
 
-Service will be available at `http://localhost:8000`
-
-**Health Check:**
-```bash
-curl http://localhost:8000/health
-```
-
-### Usage Example
-
-```bash
-curl -X POST http://localhost:8000/analyze \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Urgent: Your account has been compromised. Click here immediately to secure it."
-  }'
-```
+Service runs on `http://localhost:8000`
 
 ### Testing
 
+Run all tests:
 ```bash
 pytest tests/ -v
 ```
 
-Test coverage includes:
-- Risk score normalization and level mapping (18+ tests)
-- Schema validation for Pydantic models (20+ tests)
-- Edge cases and boundary conditions
+**Test Coverage:**
+- ✅ 13 risk mapper tests (normalization, level mapping, boundaries)
+- ✅ 16 schema validation tests (Pydantic models, constraints)
+- ✅ All 29 tests passing
 
-## Architecture Highlights
+## API Endpoint
 
-### Strict Schema Separation
+### POST /analyze
+
+Analyzes text for scam and fraud risk.
+
+**Request:**
+```bash
+curl -X POST http://localhost:8000/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Urgent: Your account has been compromised. Click here immediately to verify credentials."
+  }'
+```
+
+**Response:**
+```json
+{
+  "riskScore": 85,
+  "riskLevel": "high",
+  "detectedScamType": "phishing",
+  "explanation": "Multiple phishing indicators detected including urgency pressure, account access request, and suspicious link.",
+  "indicators": ["urgency pressure", "authority impersonation", "link spoofing"],
+  "evidence": [
+    {
+      "text": "account has been compromised",
+      "reason": "Authority impersonation with account access request",
+      "severity": "high"
+    },
+    {
+      "text": "Click here immediately",
+      "reason": "Urgency pressure with suspicious link request",
+      "severity": "high"
+    }
+  ],
+  "recommendation": "Do not click links in unsolicited messages. Verify account status through official channels directly."
+}
+```
+
+### GET /health
+
+Health check endpoint.
+
+**Response:**
+```json
+{
+  "status": "ok"
+}
+```
+
+## Project Structure
+
+```
+safeflow-ai/
+├── ai_service/                 # FastAPI application
+│   ├── main.py                 # FastAPI app & endpoint definitions
+│   ├── analyzer.py             # OpenAI integration & validation
+│   ├── main_service.py         # Service layer & orchestration
+│   ├── schemas.py              # Pydantic models (AI response + API DTOs)
+│   ├── prompts.py              # System & user prompt templates
+│   ├── risk_mapper.py          # Score normalization & level mapping
+│   ├── security.py             # Input validation & injection defense
+│   ├── errors.py               # Error codes & exceptions
+│   ├── __init__.py
+│   └── .env.example            # Environment configuration template
+├── tests/                      # Test suite
+│   ├── test_risk_mapper.py     # Risk mapping tests
+│   ├── test_schema.py          # Schema validation tests
+│   ├── conftest.py             # Pytest configuration
+│   └── __init__.py
+├── model/                      # ML model demonstrations (optional)
+├── requirements.txt            # Python dependencies
+├── README.md                   # This file
+├── .gitignore                  # Git ignore rules
+└── .env                        # Local environment (not in git)
+```
+
+## Architecture
+
+### Dual Schema Design
 
 The service maintains strict separation between two schema layers:
 
 1. **AI Response Schema** (`ScamAiResponse`)
-   - Raw contract with OpenAI
+   - Raw JSON contract with OpenAI
    - Validated with Pydantic
-   - Can evolve independently of API
+   - Can evolve independently
 
 2. **API Response DTO** (`ScamAnalysisResponse`)
    - Clean contract for API clients
    - Derived from AI response
    - Ready for frontend consumption
 
-### Component Flow
+### Score Normalization Pipeline
 
 ```
-API Request
+OpenAI Response
     ↓
-[Input Validation] → Check non-empty, size limits
+Parse JSON
     ↓
-[ScamAiAnalyzer] → Call OpenAI API
+Validate Schema (ScamAiResponse)
     ↓
-[Response Parsing] → Parse JSON
+Normalize Score → [0, 100] integer
     ↓
-[Schema Validation] → Validate against ScamAiResponse
+Recompute Risk Level (never trust model)
     ↓
-[Score Normalization] → Clamp to [0, 100]
-    ↓
-[Risk Level Recomputation] → Map score to level
-    ↓
-[Response Formatting] → Convert to API DTO
+Format Response DTO (ScamAnalysisResponse)
     ↓
 HTTP Response
 ```
 
 ### Prompt Injection Defense (3 Layers)
 
-**Layer 1: System Prompt Directive**
-- Explicitly instructs model to ignore embedded instructions
-- Clear statement that all content is untrusted
+1. **System Prompt Directive**
+   - Explicitly instructs model to ignore embedded instructions
+   - Clear statement that all content is untrusted
 
-**Layer 2: Message Delimiters**
-- User content wrapped in `BEGIN_UNTRUSTED_CONTENT` / `END_UNTRUSTED_CONTENT`
-- Prevents content from being confused with instructions
+2. **Message Delimiters**
+   - User content wrapped in `BEGIN_UNTRUSTED_CONTENT` / `END_UNTRUSTED_CONTENT`
+   - Prevents content from being confused with instructions
 
-**Layer 3: Heuristic Detection**
-- `security.is_likely_prompt_injection()` detects obvious patterns
-- Examples: "ignore previous instructions", "system prompt", "jailbreak"
+3. **Heuristic Detection**
+   - `security.is_likely_prompt_injection()` detects obvious patterns
+   - Examples: "ignore previous instructions", "system prompt", "jailbreak"
 
-### Safe Logging
+## Risk Score Thresholds
 
-- Raw user text **NEVER** logged
-- Only truncated preview (first 50 chars) via `safe_log_analysis_request()`
-- Risk scores and levels logged for monitoring
-- Analysis results logged without user data exposure
+| Score Range | Risk Level | Meaning |
+|---|---|---|
+| 0–39 | **low** | Minimal scam signals detected |
+| 40–69 | **medium** | Multiple indicators of fraud |
+| 70–100 | **high** | Strong evidence of scam/fraud |
 
 ## Error Handling
 
-Standard error codes:
+Standard error responses:
 
-| Error Code | Status | Description |
-|------------|--------|-------------|
-| `EMPTY_TEXT_CONTENT` | 400 | Text is empty or whitespace-only |
-| `CONTENT_TOO_LONG` | 400 | Text exceeds 20,000 character limit |
-| `ANALYSIS_FAILED` | 502 | OpenAI API call or response validation failed |
-| `MODEL_UNAVAILABLE` | 503 | OpenAI model not available |
-| `RATE_LIMITED` | 429 | OpenAI rate limit exceeded |
-| `SERVER_ERROR` | 500 | Unexpected server error |
+```json
+{
+  "errorCode": "ANALYSIS_FAILED",
+  "message": "Scam analysis could not be completed. Please try again.",
+  "details": {}
+}
+```
+
+Error codes:
+- `EMPTY_TEXT_CONTENT` (400) — Text is empty or whitespace-only
+- `CONTENT_TOO_LONG` (400) — Text exceeds 20,000 characters
+- `ANALYSIS_FAILED` (502) — OpenAI API failure or validation error
+- `MODEL_UNAVAILABLE` (503) — OpenAI model not available
+- `RATE_LIMITED` (429) — OpenAI rate limit exceeded
+- `SERVER_ERROR` (500) — Unexpected server error
 
 ## Environment Variables
 
-Create `ai-service/.env` with:
+Set these in `ai_service/.env`:
 
-```env
-# Required
-OPENAI_API_KEY=sk-...
-
-# Optional
-SERVICE_PORT=8000
-SERVICE_HOST=0.0.0.0
-```
+| Variable | Required | Description |
+|---|---|---|
+| `OPENAI_API_KEY` | Yes | OpenAI API key for authentication |
+| `SERVICE_PORT` | No | Port to run service on (default: 8000) |
+| `SERVICE_HOST` | No | Host to bind to (default: 0.0.0.0) |
 
 ## Development
 
 ### Code Style
 
 The project uses:
-- **Black** for code formatting
-- **Flake8** for linting
-- **MyPy** for type checking
+- **Black** — Code formatting
+- **Flake8** — Linting
+- **MyPy** — Type checking
 
 ```bash
 black ai_service/ tests/
@@ -313,61 +276,99 @@ The architecture is designed to support future ML models:
 
 1. Create a new analyzer class (e.g., `LightGBMAnalyzer`)
 2. Implement the same interface as `ScamAiAnalyzer`
-3. Update `main.py` to instantiate the new analyzer based on configuration
+3. Update `main.py` to instantiate based on configuration
 4. Existing risk normalization and DTOs work with any model
 
 ### Future Enhancements
 
-- **LightGBM Integration**: Drop-in replacement for GPT-based analysis
-- **Isolation Forest**: Unsupervised outlier detection for scam patterns
-- **Graph-Based Scoring**: Analyze relationships between scam signals
-- **SHAP Explainability**: Provide feature importance for predictions
-- **Model Ensemble**: Combine multiple models for improved accuracy
-- **Per-Channel Tuning**: Adjust risk thresholds per communication channel
-- **Real-time Learning**: Adapt model based on user feedback
+- **LightGBM Integration** — Drop-in replacement for GPT-based analysis
+- **Isolation Forest** — Unsupervised outlier detection
+- **Graph-Based Scoring** — Analyze relationships between scam signals
+- **SHAP Explainability** — Feature importance for predictions
+- **Model Ensemble** — Combine multiple models for accuracy
+- **Per-Channel Tuning** — Adjust thresholds per communication channel
+- **Real-time Learning** — Adapt model based on user feedback
 
-## Comparison: TypeScript vs Python Implementation
+## Security Notes
 
-| Feature | TypeScript (NestJS) | Python (FastAPI) |
-|---------|---|---|
-| Framework | NestJS | FastAPI |
-| Validation | class-validator | Pydantic |
-| Schema Format | Zod | Pydantic models |
-| Async | RxJS/Promises | async/await |
-| OpenAI SDK | TypeScript | Python |
-| Prompt Injection Defense | ✓ | ✓ |
-| Score Normalization | ✓ | ✓ |
-| Risk Level Recomputation | ✓ | ✓ |
-| Schema Separation | ✓ | ✓ |
-| Safe Logging | ✓ | ✓ |
-| Extensibility | ✓ | ✓ |
+### Input Validation
+- Text length limited to 20,000 characters
+- Empty or whitespace-only text rejected
+- All input treated as untrusted data
 
-Both implementations maintain **identical logic and security postures**.
+### Logging Safety
+- Raw user text **NEVER** logged
+- Only truncated preview (first 50 chars) via `safe_log_analysis_request()`
+- Risk scores and analysis results logged for monitoring
 
-## Quick Start
+### Response Validation
+- All AI responses validated against strict Pydantic schemas
+- Invalid responses rejected and wrapped in service error
+- Type safety enforced throughout pipeline
 
-### Full Stack (TypeScript + Python)
+## Deployment
 
-```bash
-# Install all dependencies
-pip install -r requirements.txt
-npm install
+### Docker Deployment
 
-# Configure AI service
-cp ai-service/.env.example ai-service/.env
-# Edit ai-service/.env with OPENAI_API_KEY
-
-# Run tests
-pytest tests/ -v
-npm test
-
-# Start Python AI service
-cd ai-service
-uvicorn main:app --reload
-
-# In another terminal, start TypeScript service
-npm run start
+Create a `Dockerfile`:
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["uvicorn", "ai_service.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+
+Build and run:
+```bash
+docker build -t safeflow-ai .
+docker run -e OPENAI_API_KEY=sk-... -p 8000:8000 safeflow-ai
+```
+
+### Environment Configuration
+
+For production, set environment variables:
+```bash
+export OPENAI_API_KEY=sk-...
+export SERVICE_HOST=0.0.0.0
+export SERVICE_PORT=8000
+uvicorn ai_service.main:app --host $SERVICE_HOST --port $SERVICE_PORT
+```
+
+## Troubleshooting
+
+### ModuleNotFoundError: No module named 'ai_service'
+
+Ensure you're running from the project root:
+```bash
+cd /path/to/safeflow-ai
+uvicorn ai_service.main:app --reload
+```
+
+### OPENAI_API_KEY not set
+
+Ensure `ai_service/.env` exists with your OpenAI key:
+```bash
+cp ai_service/.env.example ai_service/.env
+# Edit and add your key
+```
+
+### Tests failing with import errors
+
+Ensure the venv is activated and dependencies installed:
+```bash
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+pytest tests/ -v
+```
+
+## Performance
+
+- **Latency:** ~2–5 seconds per request (OpenAI API dependent)
+- **Throughput:** Limited by OpenAI rate limits
+- **Memory:** ~200–300 MB base + model overhead
+- **CPU:** Low (async I/O bound)
 
 ## License
 
@@ -377,6 +378,10 @@ npm run start
 
 For issues or questions:
 1. Check error codes in API responses
-2. Review server logs for detailed error information
+2. Review server logs for detailed information
 3. Ensure OPENAI_API_KEY is valid and has sufficient quota
 4. Verify request format matches API specification
+
+## Version
+
+Current: **v1.0.0** (Standalone Python/FastAPI implementation)
