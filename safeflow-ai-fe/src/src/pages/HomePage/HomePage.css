@@ -45,3 +45,9 @@
   justify-content: center;
   cursor: pointer;
 }
+
+.home-page__upload-button--disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  cursor: not-allowed;
+}

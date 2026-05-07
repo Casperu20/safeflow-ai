@@ -1,0 +1,29 @@
+.error-banner {
+  width: min(1000px, 100%);
+  min-height: 56px;
+  margin: 0 0 32px;
+  border-radius: 8px;
+  background-color: #f7d6d6;
+  border: 1px solid #c54d4d;
+  color: #7d1717;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+}
+
+.error-banner__message {
+  margin: 0;
+  font-size: 18px;
+  font-style: italic;
+}
+
+.error-banner__close {
+  border: none;
+  background: transparent;
+  color: #7d1717;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}

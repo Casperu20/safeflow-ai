@@ -44,3 +44,26 @@
   color: var(--color-white);
   cursor: pointer;
 }
+
+.result-page__upload-action {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-page__upload-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.result-page__camera-icon,
+.result-page__file-icon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: block;
+}
