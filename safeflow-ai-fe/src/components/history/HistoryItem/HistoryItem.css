@@ -1,0 +1,12 @@
+.history-item {
+  width: min(1000px, 100%);
+  min-height: 100px;
+  background-color: var(--color-input-bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  font-size: 26px;
+  font-style: italic;
+}

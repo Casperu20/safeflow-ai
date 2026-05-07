@@ -1,0 +1,22 @@
+.sidebar {
+  height: 100px;
+  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  padding: 0 24px;
+  color: var(--color-white);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: none;
+  background: transparent;
+  color: var(--color-white);
+  font-size: 32px;
+  font-weight: 700;
+  cursor: pointer;
+}

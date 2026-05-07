@@ -1,0 +1,15 @@
+.logo {
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.logo--small {
+  width: 80px;
+  height: 80px;
+}
+
+.logo--large {
+  width: 200px;
+  height: 200px;
+}

@@ -1,0 +1,10 @@
+.result-message {
+  flex: 1;
+  min-height: 320px;
+  background-color: var(--color-input-bg);
+  border-radius: 0 8px 8px 0;
+  padding: 48px;
+  font-size: 24px;
+  font-style: italic;
+  color: var(--color-text);
+}
