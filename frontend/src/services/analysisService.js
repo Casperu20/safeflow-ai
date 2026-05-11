@@ -1,6 +1,6 @@
 import { apiClient } from "./apiClient.js";
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 export async function analyzeInput(payload) {
   if (USE_MOCK) {
@@ -11,41 +11,77 @@ export async function analyzeInput(payload) {
     return analyzeText(payload.content);
   }
 
-  if (payload.inputType === "pdf") {
-    return analyzePdf(payload.file);
-  }
-
-  if (payload.inputType === "image") {
-    return analyzeImage(payload.file);
+  if (payload.inputType === "pdf" || payload.inputType === "image") {
+    return analyzeFile(payload.file, payload.inputType);
   }
 
   throw new Error("Unsupported input type.");
 }
 
 async function analyzeText(content) {
-  const response = await apiClient.post("/scam-analysis/text", {
+  const response = await apiClient.post("/scam-analysis", {
+    inputType: "text",
     content,
   });
 
-  return response.data;
+  return normalizeAnalysisResponse(response.data);
 }
 
-async function analyzePdf(file) {
+async function analyzeFile(file, inputType) {
   const formData = new FormData();
+
+  formData.append("inputType", inputType);
   formData.append("file", file);
 
-  const response = await apiClient.post("/scam-analysis/pdf", formData);
+  const response = await apiClient.post("/scam-analysis", formData);
 
-  return response.data;
+  return normalizeAnalysisResponse(response.data);
 }
 
-async function analyzeImage(file) {
-  const formData = new FormData();
-  formData.append("file", file);
+function normalizeAnalysisResponse(data) {
+  const explanation = data.explanation || "";
+  const recommendation = data.recommendation || "";
+  const riskScore = data.riskScore ?? 0;
+  const safetyScore = 100 - riskScore;
 
-  const response = await apiClient.post("/scam-analysis/image", formData);
+  return {
+    analysisId: data.analysisId || crypto.randomUUID(),
+    score: safetyScore,
+    riskLevel: getRiskLevelFromSafetyScore(safetyScore),
+    message: buildAnalysisMessage(explanation, recommendation),
+    detectedScamType: data.detectedScamType,
+    indicators: data.indicators || [],
+    evidence: data.evidence || [],
+    analysisMode: data.analysisMode,
+  };
+}
 
-  return response.data;
+function getRiskLevelFromSafetyScore(score) {
+  if (score > 80) {
+    return "safe";
+  }
+
+  if (score >= 50) {
+    return "medium";
+  }
+
+  return "unsafe";
+}
+
+function buildAnalysisMessage(explanation, recommendation) {
+  if (explanation && recommendation) {
+    return `${explanation}\n\nRecommendation: ${recommendation}`;
+  }
+
+  if (explanation) {
+    return explanation;
+  }
+
+  if (recommendation) {
+    return `Recommendation: ${recommendation}`;
+  }
+
+  return "No explanation was provided.";
 }
 
 async function analyzeInputMock(payload) {
@@ -55,19 +91,17 @@ async function analyzeInputMock(payload) {
     return {
       analysisId: crypto.randomUUID(),
       score: 25,
-      riskLevel: "unsafe",
       message:
         "The message contains urgency and pressure language, which are common scam indicators. Verify the sender through an official channel before taking action.",
       detectedScamType: "Urgency scam",
-      indicators: ["Urgent language", "Pressure to act quickly"]
+      indicators: ["Urgent language", "Pressure to act quickly"],
     };
   }
 
   if (payload.inputType === "pdf") {
     return {
       analysisId: crypto.randomUUID(),
-      score: 52,
-      riskLevel: "medium",
+      score: 65,
       message:
         "The uploaded PDF contains payment-related content. Some elements may require verification before proceeding.",
       detectedScamType: "Payment document review",
@@ -79,7 +113,6 @@ async function analyzeInputMock(payload) {
     return {
       analysisId: crypto.randomUUID(),
       score: 35,
-      riskLevel: "unsafe",
       message:
         "The uploaded image appears to contain a payment request. Verify the sender and payment details before taking action.",
       detectedScamType: "Suspicious payment screenshot",
@@ -90,7 +123,6 @@ async function analyzeInputMock(payload) {
   return {
     analysisId: crypto.randomUUID(),
     score: 92,
-    riskLevel: "safe",
     message:
       "No strong scam indicators were detected in the submitted content. Continue to verify payment details before proceeding.",
     indicators: [],
