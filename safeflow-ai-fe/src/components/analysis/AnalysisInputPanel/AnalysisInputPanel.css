@@ -1,0 +1,45 @@
+.analysis-input-panel {
+  width: min(1000px, 100%);
+  background-color: var(--color-input-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.analysis-input-panel__textarea {
+  width: 100%;
+  height: 200px;
+  border: none;
+  resize: vertical;
+  padding: 32px;
+  background-color: var(--color-input-bg);
+  font-size: 24px;
+  font-style: italic;
+  color: var(--color-text);
+  outline: none;
+}
+
+.analysis-input-panel__actions {
+  height: 52px;
+  background: linear-gradient(90deg, var(--color-primary-dark), var(--color-accent));
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.analysis-input-panel__actions button {
+  border: none;
+  background: transparent;
+  color: var(--color-white);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.analysis-input-panel__textarea:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.analysis-input-panel__actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

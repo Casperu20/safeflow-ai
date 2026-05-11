@@ -1,0 +1,8 @@
+.page-container {
+  width: min(1300px, calc(100% - 140px));
+  min-height: calc(100vh - 124px);
+  margin: 0 auto;
+  background-color: var(--color-surface);
+  border-radius: 4px;
+  padding: 48px;
+}
