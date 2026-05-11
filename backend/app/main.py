@@ -9,14 +9,21 @@ from app.core.config import settings
 from app.schemas.errors import ApiError, ErrorResponse
 
 
+LOCAL_FRONTEND_ORIGINS = [
+    settings.frontend_origin,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="SafeFlow AI Backend")
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[settings.frontend_origin],
+        allow_origins=list(dict.fromkeys(LOCAL_FRONTEND_ORIGINS)),
         allow_credentials=True,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["*"],
         allow_headers=["*"],
     )
 

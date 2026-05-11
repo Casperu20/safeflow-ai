@@ -1,13 +1,14 @@
-from fastapi.testclient import TestClient
+import httpx
+import pytest
 
 from app.main import app
 
 
-client = TestClient(app)
-
-
-def test_health() -> None:
-    response = client.get("/health")
+@pytest.mark.anyio
+async def test_health() -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/health")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -16,8 +17,11 @@ def test_health() -> None:
     }
 
 
-def test_api_health() -> None:
-    response = client.get("/api/health")
+@pytest.mark.anyio
+async def test_api_health() -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/health")
 
     assert response.status_code == 200
     assert response.json() == {
