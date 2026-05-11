@@ -1,13 +1,17 @@
 from json import JSONDecodeError
+from uuid import uuid4
+import logging
 
 from fastapi import APIRouter, Request
 from starlette.datastructures import UploadFile
 
 from app.schemas.errors import ApiError, ErrorResponse
-from app.schemas.scam_analysis import ScamAnalysisConfigResponse, ScamAnalysisResponse
+from app.schemas.scam_analysis import AiServiceResponse, ScamAnalysisConfigResponse, ScamAnalysisResponse
 from app.services.ai_service_client import AiServiceClient
 from app.services.scam_analysis_service import AnalysisSubmission, ScamAnalysisService
 from app.utils.text_sanitization import sanitize_text_content
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/api/scam-analysis", tags=["scam-analysis"])
@@ -60,12 +64,27 @@ async def analyze_scam_submission(request: Request) -> ScamAnalysisResponse:
                     },
                 )
 
-            return await ai_service_client.analyze_text(content)
+            ai_response = AiServiceResponse.model_validate(
+                await ai_service_client.analyze_text(content)
+            )
+            logger.info(f"AI response received: {ai_response}")
+            return ScamAnalysisResponse(
+                analysisId=f"analysis_{uuid4()}",
+                riskScore=ai_response.riskScore,
+                riskLevel=ai_response.riskLevel,
+                detectedScamType=ai_response.detectedScamType,
+                explanation=ai_response.explanation,
+                indicators=ai_response.indicators or [],
+                recommendation=ai_response.recommendation,
+                evidence=ai_response.evidence or [],
+                analysisMode="ai",
+            )
 
         return await service.analyze(submission)
     except ApiError:
         raise
     except Exception as exc:
+        logger.exception("Unexpected error during analysis")
         raise ApiError(
             status_code=500,
             error_code="ANALYSIS_FAILED",

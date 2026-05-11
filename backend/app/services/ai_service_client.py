@@ -2,7 +2,7 @@ import httpx
 
 from app.core.config import settings
 from app.schemas.errors import ApiError
-from app.schemas.scam_analysis import ScamAnalysisResponse
+from app.schemas.scam_analysis import AiServiceResponse
 
 
 class AiServiceClient:
@@ -10,7 +10,7 @@ class AiServiceClient:
         self.base_url = (base_url or settings.ai_service_url).rstrip("/")
         self.timeout_seconds = timeout_seconds
 
-    async def analyze_text(self, text: str) -> ScamAnalysisResponse:
+    async def analyze_text(self, text: str) -> AiServiceResponse:
         url = f"{self.base_url}/analyze"
 
         try:
@@ -44,7 +44,7 @@ class AiServiceClient:
 
         try:
             payload = response.json()
-            return ScamAnalysisResponse.model_validate(payload)
+            return AiServiceResponse.model_validate(payload)
         except Exception as exc:
             raise ApiError(
                 status_code=502,
