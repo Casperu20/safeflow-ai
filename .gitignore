@@ -229,3 +229,51 @@ pnpm-debug.log*
 # OS noise
 .DS_Store
 Thumbs.db
+# Project-specific ignores
+
+# Python virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Environment files
+.env
+.env.local
+*.env
+!.env.example
+frontend/.env
+backend/.env
+ai_service/.env
+
+# VS Code
+.vscode/
+
+# Frontend
+frontend/dist/
+frontend/build/
+
+
+# Project-specific ignores
+
+# Python virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Environment files
+.env
+.env.local
+*.env
+!.env.example
+frontend/.env
+backend/.env
+ai_service/.env
+
+# VS Code
+.vscode/
+
+# Frontend
+frontend/dist/
+frontend/build/

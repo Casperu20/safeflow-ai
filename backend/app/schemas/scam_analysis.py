@@ -15,7 +15,7 @@ class EvidenceItem(BaseModel):
 
 
 class ScamAnalysisResponse(BaseModel):
-    analysisId: str = Field(pattern=r"^analysis_[0-9a-fA-F-]+$")
+    analysisId: str | None = Field(default=None, pattern=r"^analysis_[0-9a-fA-F-]+$")
     riskScore: int = Field(ge=0, le=100)
     riskLevel: RiskLevel
     detectedScamType: str | None = None
@@ -23,7 +23,7 @@ class ScamAnalysisResponse(BaseModel):
     indicators: list[str]
     recommendation: str
     evidence: list[EvidenceItem]
-    analysisMode: Literal["mock"] = "mock"
+    analysisMode: Literal["mock"] | None = None
 
 
 class AcceptedFileTypes(BaseModel):

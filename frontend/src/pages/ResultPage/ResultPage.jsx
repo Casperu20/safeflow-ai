@@ -75,7 +75,8 @@ export function ResultPage() {
 }
 
   if (!result) return null;
-  const scoreStatus = getScoreStatus(result.score);
+  const scoreStatus = result.uiRiskLevel || getScoreStatus(result.score);
+  const displayRiskLevel = result.riskLevel || "unknown";
 
   return (
     <>
@@ -83,8 +84,9 @@ export function ResultPage() {
       <div className="result-page">
         <Logo />
         <h1 className="result-page__title">SafeFlow</h1>
-        <p className="result-page__subtitle">Your score is:</p>
+        <p className="result-page__subtitle">Risk score:</p>
         <ResultScore score={result.score} riskLevel={scoreStatus} />
+        <p className="result-page__risk-level">Risk level: {displayRiskLevel}</p>
         <div className={`result-page__icon result-page__icon--${scoreStatus}`}>
           {scoreStatus === "safe" && <img src={thumbsUpIcon} alt="Thumbs up icon" className="result-page__thumbs-icon" />}
           {scoreStatus === "medium" && <img src={crossIcon} alt="Cross icon" className="result-page__thumbs-icon" />}

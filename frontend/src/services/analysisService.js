@@ -42,12 +42,13 @@ function normalizeAnalysisResponse(data) {
   const explanation = data.explanation || "";
   const recommendation = data.recommendation || "";
   const riskScore = data.riskScore ?? 0;
-  const safetyScore = 100 - riskScore;
+  const normalizedRiskLevel = normalizeBackendRiskLevel(data.riskLevel, riskScore);
 
   return {
     analysisId: data.analysisId || crypto.randomUUID(),
-    score: safetyScore,
-    riskLevel: getRiskLevelFromSafetyScore(safetyScore),
+    score: riskScore,
+    riskLevel: normalizedRiskLevel,
+    uiRiskLevel: mapBackendRiskLevelToUi(normalizedRiskLevel),
     message: buildAnalysisMessage(explanation, recommendation),
     detectedScamType: data.detectedScamType,
     indicators: data.indicators || [],
@@ -56,12 +57,28 @@ function normalizeAnalysisResponse(data) {
   };
 }
 
-function getRiskLevelFromSafetyScore(score) {
-  if (score > 80) {
+function normalizeBackendRiskLevel(riskLevel, riskScore) {
+  if (riskLevel === "low" || riskLevel === "medium" || riskLevel === "high") {
+    return riskLevel;
+  }
+
+  if (riskScore >= 70) {
+    return "high";
+  }
+
+  if (riskScore >= 40) {
+    return "medium";
+  }
+
+  return "low";
+}
+
+function mapBackendRiskLevelToUi(riskLevel) {
+  if (riskLevel === "low") {
     return "safe";
   }
 
-  if (score >= 50) {
+  if (riskLevel === "medium") {
     return "medium";
   }
 

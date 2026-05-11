@@ -5,11 +5,14 @@ from starlette.datastructures import UploadFile
 
 from app.schemas.errors import ApiError, ErrorResponse
 from app.schemas.scam_analysis import ScamAnalysisConfigResponse, ScamAnalysisResponse
+from app.services.ai_service_client import AiServiceClient
 from app.services.scam_analysis_service import AnalysisSubmission, ScamAnalysisService
+from app.utils.text_sanitization import sanitize_text_content
 
 
 router = APIRouter(prefix="/api/scam-analysis", tags=["scam-analysis"])
 service = ScamAnalysisService()
+ai_service_client = AiServiceClient()
 
 
 @router.get(
@@ -35,6 +38,30 @@ async def analyze_scam_submission(request: Request) -> ScamAnalysisResponse:
     submission = await _parse_submission(request)
 
     try:
+        if submission.input_type == "text":
+            if submission.file is not None:
+                raise ApiError(
+                    status_code=400,
+                    error_code="INVALID_REQUEST",
+                    message="Text analysis accepts content only.",
+                    details={
+                        "file": ["Do not upload a file when inputType is text."],
+                    },
+                )
+
+            content = sanitize_text_content(submission.content or "")
+            if not content:
+                raise ApiError(
+                    status_code=400,
+                    error_code="EMPTY_TEXT_CONTENT",
+                    message="Text content cannot be empty.",
+                    details={
+                        "content": ["This field is required when inputType is text."],
+                    },
+                )
+
+            return await ai_service_client.analyze_text(content)
+
         return await service.analyze(submission)
     except ApiError:
         raise
@@ -87,7 +114,7 @@ async def _parse_json_submission(request: Request) -> AnalysisSubmission:
 
     return AnalysisSubmission(
         input_type=_coerce_string(payload.get("inputType")),
-        content=_coerce_string(payload.get("content")),
+        content=_coerce_string(payload.get("content")) or _coerce_string(payload.get("text")),
     )
 
 

@@ -1,7 +1,9 @@
 import httpx
 import pytest
 
+from app.api.routes import scam_analysis as scam_analysis_route
 from app.main import app
+from app.schemas.errors import ApiError
 from app.utils.file_validation import MAX_FILE_SIZE_BYTES
 
 
@@ -34,7 +36,26 @@ async def test_get_scam_analysis_config() -> None:
 
 
 @pytest.mark.anyio
-async def test_post_scam_analysis_with_valid_text_json() -> None:
+async def test_post_scam_analysis_with_valid_text_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_analyze_text(_: str):
+        return {
+            "riskScore": 86,
+            "riskLevel": "high",
+            "detectedScamType": "Payment redirection scam",
+            "explanation": "Suspicious urgency and payment change request.",
+            "indicators": ["Urgent language", "New payment details"],
+            "evidence": [
+                {
+                    "text": "new bank details immediately",
+                    "reason": "Payment redirection pressure",
+                    "severity": "high",
+                }
+            ],
+            "recommendation": "Verify payment details through a trusted channel.",
+        }
+
+    monkeypatch.setattr(scam_analysis_route.ai_service_client, "analyze_text", fake_analyze_text)
+
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post(
@@ -48,14 +69,81 @@ async def test_post_scam_analysis_with_valid_text_json() -> None:
     assert response.status_code == 200
 
     payload = response.json()
-    assert payload["analysisId"].startswith("analysis_")
     assert payload["riskScore"] == 86
     assert payload["riskLevel"] == "high"
     assert payload["detectedScamType"] == "Payment redirection scam"
-    assert payload["analysisMode"] == "mock"
     assert payload["recommendation"]
     assert payload["indicators"]
     assert payload["evidence"]
+
+
+@pytest.mark.anyio
+async def test_post_scam_analysis_text_ai_service_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def failing_analyze_text(_: str):
+        raise ApiError(
+            status_code=503,
+            error_code="AI_SERVICE_UNAVAILABLE",
+            message="AI service is unavailable.",
+            details={"serviceUrl": "http://127.0.0.1:8000"},
+        )
+
+    monkeypatch.setattr(scam_analysis_route.ai_service_client, "analyze_text", failing_analyze_text)
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/scam-analysis",
+            json={"inputType": "text", "content": "test"},
+        )
+
+    assert response.status_code == 503
+    assert response.json()["errorCode"] == "AI_SERVICE_UNAVAILABLE"
+
+
+@pytest.mark.anyio
+async def test_post_scam_analysis_text_ai_service_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def failing_analyze_text(_: str):
+        raise ApiError(
+            status_code=504,
+            error_code="AI_SERVICE_TIMEOUT",
+            message="AI service request timed out.",
+            details={"serviceUrl": "http://127.0.0.1:8000"},
+        )
+
+    monkeypatch.setattr(scam_analysis_route.ai_service_client, "analyze_text", failing_analyze_text)
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/scam-analysis",
+            json={"inputType": "text", "content": "test"},
+        )
+
+    assert response.status_code == 504
+    assert response.json()["errorCode"] == "AI_SERVICE_TIMEOUT"
+
+
+@pytest.mark.anyio
+async def test_post_scam_analysis_text_ai_service_error_response(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def failing_analyze_text(_: str):
+        raise ApiError(
+            status_code=502,
+            error_code="AI_SERVICE_ERROR",
+            message="AI service returned an error response.",
+            details={"serviceUrl": "http://127.0.0.1:8000", "statusCode": 500},
+        )
+
+    monkeypatch.setattr(scam_analysis_route.ai_service_client, "analyze_text", failing_analyze_text)
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/scam-analysis",
+            json={"inputType": "text", "content": "test"},
+        )
+
+    assert response.status_code == 502
+    assert response.json()["errorCode"] == "AI_SERVICE_ERROR"
 
 
 @pytest.mark.anyio
