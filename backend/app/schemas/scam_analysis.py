@@ -60,4 +60,4 @@ class ScamAnalysisConfigResponse(BaseModel):
     limits: AnalysisLimits
     riskThresholds: RiskThresholds
     processingMode: Literal["synchronous"] = "synchronous"
-    analysisMode: Literal["mock"] = "mock"
+    analysisMode: Literal["mock", "ai", "hybrid"] = "hybrid"

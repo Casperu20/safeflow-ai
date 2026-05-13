@@ -1,10 +1,47 @@
-# SafeFlow AI - Scam Detection Service
+# SafeFlow AI - Local Stack
+
+SafeFlow runs locally as three separate applications:
+
+- `frontend` on `http://127.0.0.1:5173`
+- `backend` on `http://127.0.0.1:8000`
+- `ai_service` on `http://127.0.0.1:8001`
+
+## Start Each App In A Separate Terminal
+
+Terminal 1: frontend
+
+```powershell
+Set-Location frontend
+$env:VITE_API_BASE_URL = "http://127.0.0.1:8000/api"
+npm run dev
+```
+
+Terminal 2: backend
+
+```powershell
+Set-Location backend
+$env:ENVIRONMENT = "development"
+$env:FRONTEND_ORIGIN = "http://localhost:5173"
+$env:AI_SERVICE_URL = "http://127.0.0.1:8001"
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Terminal 3: ai_service
+
+```powershell
+Set-Location .
+$env:OPENAI_API_KEY = "your-openai-key"
+.\.venv\Scripts\python.exe -m uvicorn ai_service.main:app --reload --host 127.0.0.1 --port 8001
+```
+
+Do not run `ai_service` on `8000`; that port is reserved for the backend API.
 
 A standalone **Python/FastAPI** microservice for analyzing text and detecting scam, fraud, social engineering, and payment redirection risk using OpenAI's GPT model.
 
 ## Overview
 
 SafeFlow AI provides a REST API that returns:
+
 - **Risk Score** (0–100, normalized integer)
 - **Risk Level** (low/medium/high)
 - **Detected Scam Type** (e.g., "invoice fraud", "phishing")
@@ -21,7 +58,7 @@ SafeFlow AI provides a REST API that returns:
 ✅ **Strict Validation** — Pydantic schema validation for all responses  
 ✅ **Safe Logging** — Never logs raw user content  
 ✅ **Extensible** — Designed to support future ML models (LightGBM, Isolation Forest, etc.)  
-✅ **Comprehensive Tests** — 29 unit tests covering all components  
+✅ **Comprehensive Tests** — 29 unit tests covering all components
 
 ## Quick Start
 
@@ -33,12 +70,14 @@ SafeFlow AI provides a REST API that returns:
 ### Installation
 
 1. **Create and activate virtual environment:**
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 2. **Install dependencies:**
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -52,25 +91,29 @@ SafeFlow AI provides a REST API that returns:
 ### Running the Service
 
 **Development (with auto-reload):**
+
 ```bash
-uvicorn ai_service.main:app --reload
+uvicorn ai_service.main:app --reload --port 8001
 ```
 
 **Production:**
+
 ```bash
-uvicorn ai_service.main:app --host 0.0.0.0 --port 8000
+uvicorn ai_service.main:app --host 0.0.0.0 --port 8001
 ```
 
-Service runs on `http://localhost:8000`
+Service runs on `http://localhost:8001`
 
 ### Testing
 
 Run all tests:
+
 ```bash
 pytest tests/ -v
 ```
 
 **Test Coverage:**
+
 - ✅ 13 risk mapper tests (normalization, level mapping, boundaries)
 - ✅ 16 schema validation tests (Pydantic models, constraints)
 - ✅ All 29 tests passing
@@ -82,8 +125,9 @@ pytest tests/ -v
 Analyzes text for scam and fraud risk.
 
 **Request:**
+
 ```bash
-curl -X POST http://localhost:8000/analyze \
+curl -X POST http://localhost:8001/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "text": "Urgent: Your account has been compromised. Click here immediately to verify credentials."
@@ -91,13 +135,18 @@ curl -X POST http://localhost:8000/analyze \
 ```
 
 **Response:**
+
 ```json
 {
   "riskScore": 85,
   "riskLevel": "high",
   "detectedScamType": "phishing",
   "explanation": "Multiple phishing indicators detected including urgency pressure, account access request, and suspicious link.",
-  "indicators": ["urgency pressure", "authority impersonation", "link spoofing"],
+  "indicators": [
+    "urgency pressure",
+    "authority impersonation",
+    "link spoofing"
+  ],
   "evidence": [
     {
       "text": "account has been compromised",
@@ -119,6 +168,7 @@ curl -X POST http://localhost:8000/analyze \
 Health check endpoint.
 
 **Response:**
+
 ```json
 {
   "status": "ok"
@@ -202,11 +252,11 @@ HTTP Response
 
 ## Risk Score Thresholds
 
-| Score Range | Risk Level | Meaning |
-|---|---|---|
-| 0–39 | **low** | Minimal scam signals detected |
-| 40–69 | **medium** | Multiple indicators of fraud |
-| 70–100 | **high** | Strong evidence of scam/fraud |
+| Score Range | Risk Level | Meaning                       |
+| ----------- | ---------- | ----------------------------- |
+| 0–39        | **low**    | Minimal scam signals detected |
+| 40–69       | **medium** | Multiple indicators of fraud  |
+| 70–100      | **high**   | Strong evidence of scam/fraud |
 
 ## Error Handling
 
@@ -221,6 +271,7 @@ Standard error responses:
 ```
 
 Error codes:
+
 - `EMPTY_TEXT_CONTENT` (400) — Text is empty or whitespace-only
 - `CONTENT_TOO_LONG` (400) — Text exceeds 20,000 characters
 - `ANALYSIS_FAILED` (502) — OpenAI API failure or validation error
@@ -232,17 +283,18 @@ Error codes:
 
 Set these in `ai_service/.env`:
 
-| Variable | Required | Description |
-|---|---|---|
-| `OPENAI_API_KEY` | Yes | OpenAI API key for authentication |
-| `SERVICE_PORT` | No | Port to run service on (default: 8000) |
-| `SERVICE_HOST` | No | Host to bind to (default: 0.0.0.0) |
+| Variable         | Required | Description                            |
+| ---------------- | -------- | -------------------------------------- |
+| `OPENAI_API_KEY` | Yes      | OpenAI API key for authentication      |
+| `SERVICE_PORT`   | No       | Port to run service on (default: 8001) |
+| `SERVICE_HOST`   | No       | Host to bind to (default: 0.0.0.0)     |
 
 ## Development
 
 ### Code Style
 
 The project uses:
+
 - **Black** — Code formatting
 - **Flake8** — Linting
 - **MyPy** — Type checking
@@ -264,6 +316,7 @@ def test_something():
 ```
 
 Run with:
+
 ```bash
 pytest tests/ -v
 ```
@@ -292,16 +345,19 @@ The architecture is designed to support future ML models:
 ## Security Notes
 
 ### Input Validation
+
 - Text length limited to 20,000 characters
 - Empty or whitespace-only text rejected
 - All input treated as untrusted data
 
 ### Logging Safety
+
 - Raw user text **NEVER** logged
 - Only truncated preview (first 50 chars) via `safe_log_analysis_request()`
 - Risk scores and analysis results logged for monitoring
 
 ### Response Validation
+
 - All AI responses validated against strict Pydantic schemas
 - Invalid responses rejected and wrapped in service error
 - Type safety enforced throughout pipeline
@@ -311,28 +367,31 @@ The architecture is designed to support future ML models:
 ### Docker Deployment
 
 Create a `Dockerfile`:
+
 ```dockerfile
 FROM python:3.11-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-CMD ["uvicorn", "ai_service.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "ai_service.main:app", "--host", "0.0.0.0", "--port", "8001"]
 ```
 
 Build and run:
+
 ```bash
 docker build -t safeflow-ai .
-docker run -e OPENAI_API_KEY=sk-... -p 8000:8000 safeflow-ai
+docker run -e OPENAI_API_KEY=sk-... -p 8001:8001 safeflow-ai
 ```
 
 ### Environment Configuration
 
 For production, set environment variables:
+
 ```bash
 export OPENAI_API_KEY=sk-...
 export SERVICE_HOST=0.0.0.0
-export SERVICE_PORT=8000
+export SERVICE_PORT=8001
 uvicorn ai_service.main:app --host $SERVICE_HOST --port $SERVICE_PORT
 ```
 
@@ -341,6 +400,7 @@ uvicorn ai_service.main:app --host $SERVICE_HOST --port $SERVICE_PORT
 ### ModuleNotFoundError: No module named 'ai_service'
 
 Ensure you're running from the project root:
+
 ```bash
 cd /path/to/safeflow-ai
 uvicorn ai_service.main:app --reload
@@ -349,6 +409,7 @@ uvicorn ai_service.main:app --reload
 ### OPENAI_API_KEY not set
 
 Ensure `ai_service/.env` exists with your OpenAI key:
+
 ```bash
 cp ai_service/.env.example ai_service/.env
 # Edit and add your key
@@ -357,6 +418,7 @@ cp ai_service/.env.example ai_service/.env
 ### Tests failing with import errors
 
 Ensure the venv is activated and dependencies installed:
+
 ```bash
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
@@ -377,6 +439,7 @@ pytest tests/ -v
 ## Support
 
 For issues or questions:
+
 1. Check error codes in API responses
 2. Review server logs for detailed information
 3. Ensure OPENAI_API_KEY is valid and has sufficient quota

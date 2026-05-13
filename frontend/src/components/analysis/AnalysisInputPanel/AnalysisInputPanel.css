@@ -20,7 +20,11 @@
 
 .analysis-input-panel__actions {
   height: 52px;
-  background: linear-gradient(90deg, var(--color-primary-dark), var(--color-accent));
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-dark),
+    var(--color-accent)
+  );
   display: flex;
   justify-content: space-between;
   padding: 0 16px;
@@ -42,4 +46,8 @@
 .analysis-input-panel__actions button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.analysis-input-panel__textarea::placeholder {
+  color: var(--color-muted-text);
 }

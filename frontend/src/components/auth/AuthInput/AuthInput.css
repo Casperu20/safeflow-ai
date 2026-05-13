@@ -4,9 +4,14 @@
   border: none;
   border-radius: 16px;
   background-color: var(--color-page-bg);
+  color: var(--color-text);
   padding: 0 24px;
   text-align: center;
   font-size: 26px;
   font-style: italic;
   outline: none;
+}
+
+.auth-input::placeholder {
+  color: var(--color-muted-text);
 }

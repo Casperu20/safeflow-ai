@@ -5,23 +5,33 @@ from app.schemas.errors import ApiError
 from app.schemas.scam_analysis import AiServiceResponse
 
 
+DEFAULT_CONNECT_TIMEOUT_SECONDS = 5.0
+
+
 class AiServiceClient:
-    def __init__(self, base_url: str | None = None, timeout_seconds: float = 10.0) -> None:
+    def __init__(self, base_url: str | None = None, timeout_seconds: float | None = None) -> None:
         self.base_url = (base_url or settings.ai_service_url).rstrip("/")
-        self.timeout_seconds = timeout_seconds
+        self.timeout_seconds = timeout_seconds or settings.ai_service_timeout_seconds
+        self.timeout = httpx.Timeout(
+            self.timeout_seconds,
+            connect=DEFAULT_CONNECT_TIMEOUT_SECONDS,
+        )
 
     async def analyze_text(self, text: str) -> AiServiceResponse:
         url = f"{self.base_url}/analyze"
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(url, json={"text": text})
         except httpx.TimeoutException as exc:
             raise ApiError(
                 status_code=504,
                 error_code="AI_SERVICE_TIMEOUT",
                 message="AI service request timed out.",
-                details={"serviceUrl": self.base_url},
+                details={
+                    "serviceUrl": self.base_url,
+                    "timeoutSeconds": self.timeout_seconds,
+                },
             ) from exc
         except httpx.RequestError as exc:
             raise ApiError(

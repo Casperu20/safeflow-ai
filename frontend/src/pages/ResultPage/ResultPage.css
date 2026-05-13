@@ -74,3 +74,15 @@
   object-fit: contain;
   display: block;
 }
+
+html[data-theme="dark"] .result-page__title {
+  color: var(--color-accent);
+}
+
+html[data-theme="dark"] .result-page__subtitle {
+  color: #d8f7f4;
+}
+
+html[data-theme="dark"] .result-page__content {
+  color: var(--color-text);
+}

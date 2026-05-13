@@ -1,6 +1,6 @@
 # SafeFlow AI Backend
 
-Mock FastAPI backend for the SafeFlow AI MVP. This service provides a stable frontend integration contract for text, PDF, and image scam analysis requests without implementing a real model, OCR, PDF parsing, authentication, or persistence yet.
+FastAPI backend for SafeFlow AI. Text input and text-based PDF uploads are forwarded to the AI analysis microservice, while image uploads remain on the mock path until OCR is implemented.
 
 ## Requirements
 
@@ -15,20 +15,54 @@ Set-Location backend
 Copy-Item .env.example .env
 ```
 
+This installs the backend runtime plus the `openai` client needed when you run the local `ai_service` from the same virtual environment.
+
 Set the environment variables before starting the app:
 
 ```powershell
 $env:ENVIRONMENT = "development"
-$env:FRONTEND_ORIGIN = "http://localhost:3000"
+$env:FRONTEND_ORIGIN = "http://localhost:5173"
+$env:AI_SERVICE_URL = "http://127.0.0.1:8001"
+$env:AI_SERVICE_TIMEOUT_SECONDS = "60"
 ```
 
-Note: the current frontend is a Vite app and will use `http://localhost:5173` unless you override its port. If you keep the Vite default, set `FRONTEND_ORIGIN` to `http://localhost:5173` to avoid CORS failures during development.
+The local stack uses these fixed ports:
+
+- Frontend: `http://127.0.0.1:5173`
+- Backend: `http://127.0.0.1:8000`
+- AI service: `http://127.0.0.1:8001`
 
 ## Run Locally
 
+Start each application in a separate terminal.
+
+Terminal 1: AI service
+
+```powershell
+Set-Location ..
+$env:OPENAI_API_KEY = "your-openai-key"
+& "C:/Program Files/Python313/python.exe" -m uvicorn ai_service.main:app --reload --host 127.0.0.1 --port 8001
+```
+
+If `ai_service` fails with `ModuleNotFoundError: No module named 'openai'`, reinstall dependencies in the active virtual environment with `python -m pip install -r backend/requirements.txt`.
+
+Terminal 2: backend
+
 ```powershell
 Set-Location backend
-& "C:/Program Files/Python313/python.exe" -m uvicorn app.main:app --reload
+$env:ENVIRONMENT = "development"
+$env:FRONTEND_ORIGIN = "http://localhost:5173"
+$env:AI_SERVICE_URL = "http://127.0.0.1:8001"
+$env:AI_SERVICE_TIMEOUT_SECONDS = "60"
+& "C:/Program Files/Python313/python.exe" -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Terminal 3: frontend
+
+```powershell
+Set-Location ..\frontend
+$env:VITE_API_BASE_URL = "http://127.0.0.1:8000/api"
+npm run dev
 ```
 
 The API will be available at `http://127.0.0.1:8000`.
@@ -39,6 +73,8 @@ OpenAPI docs are available at `http://127.0.0.1:8000/docs`.
 
 - `ENVIRONMENT`: runtime environment label. Use `development` for local work.
 - `FRONTEND_ORIGIN`: allowed frontend origin for CORS.
+- `AI_SERVICE_URL`: base URL of the internal AI analysis microservice.
+- `AI_SERVICE_TIMEOUT_SECONDS`: backend timeout in seconds for responses from `ai_service`.
 
 ## Endpoints
 
@@ -104,7 +140,7 @@ curl -X POST http://127.0.0.1:8000/api/scam-analysis \
       "severity": "high"
     }
   ],
-  "analysisMode": "mock"
+  "analysisMode": "ai"
 }
 ```
 
@@ -133,9 +169,8 @@ Set-Location backend
 
 ## Known Limitations
 
-- No real scam detection model yet
-- No OCR yet
-- No PDF extraction yet
+- OCR is not implemented yet, so image uploads still use mock analysis
+- PDF analysis works only for text-based PDFs; scanned PDFs still require OCR
 - No database yet
-- Mock risk scoring only
+- Image risk scoring is still mock-only
 - No authentication or dashboard integration yet

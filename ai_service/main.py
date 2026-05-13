@@ -33,7 +33,9 @@ Output:
 import logging
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from openai import OpenAI
 
@@ -50,10 +52,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+SERVICE_DIR = Path(__file__).resolve().parent
+SERVICE_ENV_PATH = SERVICE_DIR / ".env"
+
 
 # Global instances
 _analyzer: ScamAiAnalyzer | None = None
 _service: ScamAnalysisService | None = None
+
+
+def load_service_environment() -> None:
+    """Load ai_service configuration from a local .env file when present."""
+    if SERVICE_ENV_PATH.exists():
+        load_dotenv(SERVICE_ENV_PATH, override=False)
 
 
 @asynccontextmanager
@@ -68,11 +79,12 @@ async def lifespan(app: FastAPI):
     
     # Startup
     logger.info("Starting SafeFlow AI service")
+    load_service_environment()
     
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
         raise RuntimeError(
-            "OPENAI_API_KEY environment variable not set"
+            "OPENAI_API_KEY environment variable not set. Define it in the shell or in ai_service/.env."
         )
     
     openai_client = OpenAI(api_key=openai_api_key)
@@ -155,6 +167,6 @@ if __name__ == "__main__":
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8000,
+        port=8001,
         log_level="info",
     )

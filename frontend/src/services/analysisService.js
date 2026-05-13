@@ -38,11 +38,39 @@ async function analyzeFile(file, inputType) {
   return normalizeAnalysisResponse(response.data);
 }
 
+export function getApiErrorMessage(error, fallbackMessage) {
+  const responseData = error?.response?.data;
+
+  if (
+    typeof responseData?.message === "string" &&
+    responseData.message.trim()
+  ) {
+    const detailMessages = Object.values(responseData.details || {})
+      .flat()
+      .filter((value) => typeof value === "string" && value.trim());
+
+    if (detailMessages.length > 0) {
+      return `${responseData.message} ${detailMessages[0]}`;
+    }
+
+    return responseData.message;
+  }
+
+  if (error?.code === "ERR_NETWORK") {
+    return "Cannot reach the backend service. Check that the backend is running on http://127.0.0.1:8000.";
+  }
+
+  return fallbackMessage;
+}
+
 function normalizeAnalysisResponse(data) {
   const explanation = data.explanation || "";
   const recommendation = data.recommendation || "";
   const riskScore = data.riskScore ?? 0;
-  const normalizedRiskLevel = normalizeBackendRiskLevel(data.riskLevel, riskScore);
+  const normalizedRiskLevel = normalizeBackendRiskLevel(
+    data.riskLevel,
+    riskScore,
+  );
 
   return {
     analysisId: data.analysisId || crypto.randomUUID(),
@@ -104,7 +132,10 @@ function buildAnalysisMessage(explanation, recommendation) {
 async function analyzeInputMock(payload) {
   await new Promise((resolve) => setTimeout(resolve, 600));
 
-  if (payload.inputType === "text" && payload.content.toLowerCase().includes("urgent")) {
+  if (
+    payload.inputType === "text" &&
+    payload.content.toLowerCase().includes("urgent")
+  ) {
     return {
       analysisId: crypto.randomUUID(),
       score: 25,

@@ -12,3 +12,18 @@
   --color-risk-medium: #9b970f;
   --color-risk-unsafe: #8f1d1d;
 }
+
+html[data-theme="dark"] {
+  --color-primary: #0f4f4d;
+  --color-primary-dark: #092f31;
+  --color-accent: #37d6cf;
+  --color-page-bg: #081416;
+  --color-surface: #102326;
+  --color-input-bg: #1b3438;
+  --color-text: #f2f7f6;
+  --color-muted-text: #c3d3d1;
+  --color-white: #ffffff;
+  --color-risk-safe: #3fd47b;
+  --color-risk-medium: #e0d94f;
+  --color-risk-unsafe: #ff6b6b;
+}

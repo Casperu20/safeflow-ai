@@ -51,3 +51,15 @@
   pointer-events: none;
   cursor: not-allowed;
 }
+
+html[data-theme="dark"] .home-page__title {
+  color: var(--color-accent);
+}
+
+html[data-theme="dark"] .home-page__subtitle {
+  color: #d8f7f4;
+}
+
+html[data-theme="dark"] .home-page__upload-title {
+  color: #d8f7f4;
+}

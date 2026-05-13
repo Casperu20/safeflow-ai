@@ -7,6 +7,37 @@ from app.schemas.errors import ApiError
 from app.utils.file_validation import MAX_FILE_SIZE_BYTES
 
 
+def _build_text_pdf_bytes(text: str) -> bytes:
+    escaped_text = (
+        text.replace("\\", "\\\\")
+        .replace("(", "\\(")
+        .replace(")", "\\)")
+    )
+    stream = f"BT\n/F1 12 Tf\n72 720 Td\n({escaped_text}) Tj\nET\n".encode("latin-1")
+    objects = [
+        b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+        b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n",
+        b"4 0 obj\n<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"endstream\nendobj\n",
+        b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+    ]
+
+    pdf_bytes = b"%PDF-1.4\n"
+    offsets = [0]
+    for obj in objects:
+        offsets.append(len(pdf_bytes))
+        pdf_bytes += obj
+
+    startxref = len(pdf_bytes)
+    pdf_bytes += f"xref\n0 {len(objects) + 1}\n".encode("ascii")
+    pdf_bytes += b"0000000000 65535 f \n"
+    for offset in offsets[1:]:
+        pdf_bytes += f"{offset:010d} 00000 n \n".encode("ascii")
+    pdf_bytes += b"trailer\n<< /Size 6 /Root 1 0 R >>\n"
+    pdf_bytes += f"startxref\n{startxref}\n%%EOF".encode("ascii")
+    return pdf_bytes
+
+
 @pytest.mark.anyio
 async def test_get_scam_analysis_config() -> None:
     transport = httpx.ASGITransport(app=app)
@@ -31,7 +62,7 @@ async def test_get_scam_analysis_config() -> None:
             "high": [70, 100],
         },
         "processingMode": "synchronous",
-        "analysisMode": "mock",
+        "analysisMode": "hybrid",
     }
 
 
@@ -107,7 +138,7 @@ async def test_post_scam_analysis_text_ai_service_timeout(monkeypatch: pytest.Mo
             status_code=504,
             error_code="AI_SERVICE_TIMEOUT",
             message="AI service request timed out.",
-            details={"serviceUrl": "http://127.0.0.1:8000"},
+            details={"serviceUrl": "http://127.0.0.1:8001", "timeoutSeconds": 60.0},
         )
 
     monkeypatch.setattr(scam_analysis_route.ai_service_client, "analyze_text", failing_analyze_text)
@@ -121,6 +152,14 @@ async def test_post_scam_analysis_text_ai_service_timeout(monkeypatch: pytest.Mo
 
     assert response.status_code == 504
     assert response.json()["errorCode"] == "AI_SERVICE_TIMEOUT"
+
+
+def test_ai_service_client_uses_configured_timeout() -> None:
+    from app.services.ai_service_client import AiServiceClient
+
+    client = AiServiceClient(base_url="http://127.0.0.1:8001")
+
+    assert client.timeout_seconds == 60.0
 
 
 @pytest.mark.anyio
@@ -185,24 +224,113 @@ async def test_post_scam_analysis_with_unsupported_input_type() -> None:
 
 
 @pytest.mark.anyio
-async def test_post_scam_analysis_with_pdf_upload() -> None:
+async def test_post_scam_analysis_with_pdf_upload(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured_payload: dict[str, str] = {}
+
+    async def fake_analyze_text(text: str):
+        captured_payload["text"] = text
+        return {
+            "riskScore": 72,
+            "riskLevel": "high",
+            "detectedScamType": "Payment redirection scam",
+            "explanation": "Extracted PDF text indicates a payment change request.",
+            "indicators": ["Urgent language", "New payment details"],
+            "evidence": [
+                {
+                    "text": "Urgent verify now new bank details",
+                    "reason": "Payment redirection pressure",
+                    "severity": "high",
+                }
+            ],
+            "recommendation": "Verify the request through a trusted channel.",
+        }
+
+    monkeypatch.setattr(scam_analysis_route.ai_service_client, "analyze_text", fake_analyze_text)
+
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post(
             "/api/scam-analysis",
             data={"inputType": "pdf"},
             files={
-                "file": ("invoice-payment.pdf", b"%PDF-1.4 mock document", "application/pdf"),
+                "file": (
+                    "invoice-payment.pdf",
+                    _build_text_pdf_bytes("Urgent verify now and use the new bank details."),
+                    "application/pdf",
+                ),
             },
         )
 
     assert response.status_code == 200
 
     payload = response.json()
-    assert payload["riskScore"] == 77
+    assert "new bank details" in captured_payload["text"].lower()
+    assert payload["riskScore"] == 72
     assert payload["riskLevel"] == "high"
     assert payload["detectedScamType"] == "Payment redirection scam"
-    assert payload["analysisMode"] == "mock"
+    assert payload["analysisMode"] == "ai"
+
+
+@pytest.mark.anyio
+async def test_post_scam_analysis_truncates_large_pdf_text_before_ai(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured_payload: dict[str, str] = {}
+
+    async def fake_analyze_text(text: str):
+        captured_payload["text"] = text
+        return {
+            "riskScore": 41,
+            "riskLevel": "medium",
+            "detectedScamType": "Suspicious payment message",
+            "explanation": "Large PDF content was accepted.",
+            "indicators": ["Payment request"],
+            "evidence": [],
+            "recommendation": "Review the document carefully.",
+        }
+
+    monkeypatch.setattr(scam_analysis_route.ai_service_client, "analyze_text", fake_analyze_text)
+
+    long_text = "urgent payment transfer " * 2000
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/scam-analysis",
+            data={"inputType": "pdf"},
+            files={
+                "file": (
+                    "large-invoice.pdf",
+                    _build_text_pdf_bytes(long_text),
+                    "application/pdf",
+                ),
+            },
+        )
+
+    assert response.status_code == 200
+    assert len(captured_payload["text"]) == 20_000
+
+
+@pytest.mark.anyio
+async def test_post_scam_analysis_rejects_non_parseable_pdf() -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/scam-analysis",
+            data={"inputType": "pdf"},
+            files={
+                "file": ("invoice-payment.pdf", b"%PDF-1.4 not-a-real-pdf", "application/pdf"),
+            },
+        )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "errorCode": "PDF_TEXT_EXTRACTION_FAILED",
+        "message": "Could not extract readable text from the uploaded PDF.",
+        "details": {
+            "file": [
+                "The uploaded PDF could not be parsed as a text-based document."
+            ]
+        },
+    }
 
 
 @pytest.mark.anyio

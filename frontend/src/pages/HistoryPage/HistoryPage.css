@@ -17,3 +17,7 @@
   align-items: center;
   gap: 28px;
 }
+
+html[data-theme="dark"] .history-page h1 {
+  color: var(--color-accent);
+}

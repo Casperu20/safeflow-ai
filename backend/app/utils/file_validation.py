@@ -34,6 +34,7 @@ class ValidatedUpload:
     filename: str
     content_type: str
     size_bytes: int
+    raw_bytes: bytes
 
 
 async def validate_uploaded_file(
@@ -92,4 +93,5 @@ async def validate_uploaded_file(
         filename=filename,
         content_type=content_type,
         size_bytes=size_bytes,
+        raw_bytes=raw_bytes,
     )

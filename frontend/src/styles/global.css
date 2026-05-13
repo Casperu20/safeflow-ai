@@ -15,8 +15,29 @@ body {
   min-height: 100vh;
 }
 
+html,
+body {
+  background-color: var(--color-page-bg);
+  color: var(--color-text);
+}
+
 button,
 input,
 textarea {
   font: inherit;
+}
+
+body,
+.header,
+.page-container,
+.analysis-input-panel,
+.analysis-input-panel__textarea,
+.result-message,
+.auth-card,
+.auth-input,
+.history-item {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
