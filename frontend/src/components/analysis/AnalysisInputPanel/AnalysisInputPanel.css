@@ -43,3 +43,6 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.analysis-input-panel__textarea::placeholder {
+  color: var(--color-muted-text);
+}

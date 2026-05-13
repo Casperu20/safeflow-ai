@@ -7,26 +7,41 @@
   padding: 0 24px;
 }
 
-.header__right-actions{
+.header__left-actions,
+.header__right-actions {
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
+  align-items: center;
+  gap: 24px;
 }
 
 .header__button {
   border: none;
   background: transparent;
-  color: var(--color-white);
   cursor: pointer;
   padding: 0;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
 }
 
-.header__icon {
-  width: 52px;
-  height: 52px;
+.header__menu-icon,
+.header__icon,
+.header__profile-icon {
   display: block;
   object-fit: contain;
+}
+
+.header__menu-icon {
+  width: 52px;
+  height: 52px;
+}
+
+.header__icon {
+  width: 48px;
+  height: 48px;
+}
+
+.header__profile-icon {
+  width: 52px;
+  height: 52px;
 }
