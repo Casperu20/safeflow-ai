@@ -11,14 +11,21 @@
 }
 
 .result-page__subtitle {
-  margin: 4px 0 24px;
+  margin: 4px 0 16px;
   font-size: 40px;
   font-style: italic;
   color: var(--color-primary-dark);
 }
 
+.result-page__risk-level {
+  margin: 10px 0 28px;
+  font-size: 24px;
+  color: var(--color-primary-dark);
+  text-transform: capitalize;
+}
+
 .result-page__icon {
-  margin: 32px 0 48px;
+  margin: 20px 0 48px;
   font-size: 72px;
 }
 
