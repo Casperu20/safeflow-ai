@@ -4,11 +4,12 @@ from typing import Literal
 
 from starlette.datastructures import UploadFile
 
+from app.core.config import settings
 from app.schemas.errors import ApiError
 from app.schemas.scam_analysis import AcceptedFileTypes
 
 
-MAX_FILE_SIZE_MB = 10
+MAX_FILE_SIZE_MB = settings.max_file_size_mb
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 _ALLOWED_FILE_RULES = {

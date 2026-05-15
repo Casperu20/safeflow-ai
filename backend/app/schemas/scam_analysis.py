@@ -6,6 +6,13 @@ from pydantic import BaseModel, Field
 InputType = Literal["text", "pdf", "image"]
 RiskLevel = Literal["low", "medium", "high"]
 EvidenceSeverity = Literal["low", "medium", "high"]
+ExtractionMethod = Literal[
+    "plain_text",
+    "pdf_text_layer",
+    "pdf_ocr",
+    "pdf_hybrid",
+    "image_ocr",
+]
 
 
 class EvidenceItem(BaseModel):
@@ -34,7 +41,7 @@ class ScamAnalysisResponse(BaseModel):
     indicators: list[str] = Field(default_factory=list)
     recommendation: str
     evidence: list[EvidenceItem] = Field(default_factory=list)
-    analysisMode: Literal["mock", "ai"] | None = None
+    analysisMode: str | None = None
 
 
 class AcceptedFileTypes(BaseModel):
@@ -45,7 +52,9 @@ class AcceptedFileTypes(BaseModel):
 class AnalysisLimits(BaseModel):
     maxTextLength: int
     maxFileSizeMB: int
-    maxPdfPages: int | None
+    maxPdfPages: int
+    maxImageWidth: int
+    maxImageHeight: int
 
 
 class RiskThresholds(BaseModel):
@@ -60,4 +69,6 @@ class ScamAnalysisConfigResponse(BaseModel):
     limits: AnalysisLimits
     riskThresholds: RiskThresholds
     processingMode: Literal["synchronous"] = "synchronous"
-    analysisMode: Literal["mock", "ai", "hybrid"] = "hybrid"
+    analysisMode: str | None = None
+    ocrEnabled: bool = True
+    supportedExtractionMethods: list[ExtractionMethod] = Field(default_factory=list)

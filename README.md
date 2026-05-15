@@ -1,14 +1,98 @@
-# SafeFlow AI - Local Stack
+# SafeFlow AI
 
-SafeFlow runs locally as three separate applications:
+SafeFlow AI is a local three-app stack for scam-risk analysis of payment-related content. Users can sign up, log in, submit text/PDF/image content for analysis, and view their saved analysis history.
 
-- `frontend` on `http://127.0.0.1:5173`
-- `backend` on `http://127.0.0.1:8000`
-- `ai_service` on `http://127.0.0.1:8001`
+## Local Stack
 
-## Start Each App In A Separate Terminal
+- `frontend`: `http://127.0.0.1:5173`
+- `backend`: `http://127.0.0.1:8000`
+- `ai_service`: `http://127.0.0.1:8001`
 
-Terminal 1: frontend
+## Main Features
+
+- JWT-based MVP authentication with session restore through `GET /api/auth/me`
+- Scam analysis for text, PDF, and image uploads through `POST /api/scam-analysis`
+- Persistent per-user analysis history in SQLite through `GET /api/analysis-history`
+- OCR support for images and scanned PDFs when Tesseract is installed on the host
+- Anonymous analysis still works; history is only saved when a valid Bearer token is present
+
+## Backend Setup
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item .env.example .env
+```
+
+Required backend environment variables for local development:
+
+```env
+ENVIRONMENT=development
+FRONTEND_ORIGIN=http://127.0.0.1:5173
+DATABASE_URL=sqlite:///./safeflow.db
+JWT_SECRET_KEY=change_this_in_production_please_use_a_long_random_value
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+AI_SERVICE_URL=http://127.0.0.1:8001
+AI_SERVICE_TIMEOUT_SECONDS=60
+ANALYSIS_MODE=ai
+OCR_ENABLED=true
+OCR_LANG=eng
+OCR_TIMEOUT_SECONDS=20
+MAX_FILE_SIZE_MB=10
+MAX_PDF_PAGES=5
+MAX_IMAGE_WIDTH=4000
+MAX_IMAGE_HEIGHT=4000
+MIN_EXTRACTED_TEXT_CHARS=20
+MAX_TEXT_LENGTH=10000
+MAX_AI_INPUT_CHARS=20000
+```
+
+Run migrations before starting the backend:
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe -m alembic upgrade head
+```
+
+## Frontend Setup
+
+```powershell
+Set-Location frontend
+npm install
+$env:VITE_API_BASE_URL = "http://127.0.0.1:8000/api"
+```
+
+## Tesseract OCR
+
+Windows:
+
+```powershell
+winget install --id UB-Mannheim.TesseractOCR -e
+tesseract --version
+```
+
+If Tesseract is missing, OCR-backed uploads return `503 OCR_RUNTIME_UNAVAILABLE` and `/api/scam-analysis/config` reports `ocrEnabled: false`.
+
+## Start The Full Stack
+
+Terminal 1: AI service
+
+```powershell
+Set-Location ai_service
+$env:OPENAI_API_KEY = "your-openai-key"
+..\.venv\Scripts\python.exe -m uvicorn main:app --reload --host 127.0.0.1 --port 8001
+```
+
+Terminal 2: backend
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe -m alembic upgrade head
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Terminal 3: frontend
 
 ```powershell
 Set-Location frontend
@@ -16,247 +100,98 @@ $env:VITE_API_BASE_URL = "http://127.0.0.1:8000/api"
 npm run dev
 ```
 
-Terminal 2: backend
+## API Summary
 
-```powershell
-Set-Location backend
-$env:ENVIRONMENT = "development"
-$env:FRONTEND_ORIGIN = "http://localhost:5173"
-$env:AI_SERVICE_URL = "http://127.0.0.1:8001"
-..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
+Auth:
 
-Terminal 3: ai_service
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+- `POST /api/auth/recover-password`
 
-```powershell
-Set-Location .
-$env:OPENAI_API_KEY = "your-openai-key"
-.\.venv\Scripts\python.exe -m uvicorn ai_service.main:app --reload --host 127.0.0.1 --port 8001
-```
+Analysis:
 
-Do not run `ai_service` on `8000`; that port is reserved for the backend API.
+- `GET /api/scam-analysis/config`
+- `POST /api/scam-analysis`
 
-A standalone **Python/FastAPI** microservice for analyzing text and detecting scam, fraud, social engineering, and payment redirection risk using OpenAI's GPT model.
+History:
 
-## Overview
+- `GET /api/analysis-history`
+- `GET /api/analysis-history/{analysisId}`
+- `DELETE /api/analysis-history/{analysisId}`
 
-SafeFlow AI provides a REST API that returns:
+Health:
 
-- **Risk Score** (0–100, normalized integer)
-- **Risk Level** (low/medium/high)
-- **Detected Scam Type** (e.g., "invoice fraud", "phishing")
-- **Evidence Snippets** from submitted text with severity levels
-- **Risk Indicators** and recommendations
+- `GET /health`
+- `GET /api/health`
 
-### Key Features
+## Example Requests
 
-✅ **AI-Powered Detection** — OpenAI GPT-4.1  
-✅ **Normalized Risk Scores** — Always [0, 100] integer  
-✅ **Risk Level Recomputation** — Never trusts model's classification  
-✅ **Evidence-Based** — Extracts specific snippets from analyzed text  
-✅ **Prompt Injection Defense** — 3-layer protection against adversarial inputs  
-✅ **Strict Validation** — Pydantic schema validation for all responses  
-✅ **Safe Logging** — Never logs raw user content  
-✅ **Extensible** — Designed to support future ML models (LightGBM, Isolation Forest, etc.)  
-✅ **Comprehensive Tests** — 29 unit tests covering all components
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.9+
-- OpenAI API key (from https://platform.openai.com/api-keys)
-
-### Installation
-
-1. **Create and activate virtual environment:**
-
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-2. **Install dependencies:**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure environment:**
-   ```bash
-   cp ai_service/.env.example ai_service/.env
-   # Edit ai_service/.env and add your OPENAI_API_KEY
-   ```
-
-### Running the Service
-
-**Development (with auto-reload):**
+Register:
 
 ```bash
-uvicorn ai_service.main:app --reload --port 8001
-```
-
-**Production:**
-
-```bash
-uvicorn ai_service.main:app --host 0.0.0.0 --port 8001
-```
-
-Service runs on `http://localhost:8001`
-
-### Testing
-
-Run all tests:
-
-```bash
-pytest tests/ -v
-```
-
-**Test Coverage:**
-
-- ✅ 13 risk mapper tests (normalization, level mapping, boundaries)
-- ✅ 16 schema validation tests (Pydantic models, constraints)
-- ✅ All 29 tests passing
-
-## API Endpoint
-
-### POST /analyze
-
-Analyzes text for scam and fraud risk.
-
-**Request:**
-
-```bash
-curl -X POST http://localhost:8001/analyze \
+curl -X POST http://127.0.0.1:8000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Urgent: Your account has been compromised. Click here immediately to verify credentials."
+    "email": "user@example.com",
+    "password": "StrongPassword123!",
+    "fullName": "Example User"
   }'
 ```
 
-**Response:**
+Login:
 
-```json
-{
-  "riskScore": 85,
-  "riskLevel": "high",
-  "detectedScamType": "phishing",
-  "explanation": "Multiple phishing indicators detected including urgency pressure, account access request, and suspicious link.",
-  "indicators": [
-    "urgency pressure",
-    "authority impersonation",
-    "link spoofing"
-  ],
-  "evidence": [
-    {
-      "text": "account has been compromised",
-      "reason": "Authority impersonation with account access request",
-      "severity": "high"
-    },
-    {
-      "text": "Click here immediately",
-      "reason": "Urgency pressure with suspicious link request",
-      "severity": "high"
-    }
-  ],
-  "recommendation": "Do not click links in unsolicited messages. Verify account status through official channels directly."
-}
+```bash
+curl -X POST http://127.0.0.1:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "StrongPassword123!"
+  }'
 ```
 
-### GET /health
+Authenticated scam analysis:
 
-Health check endpoint.
-
-**Response:**
-
-```json
-{
-  "status": "ok"
-}
+```bash
+curl -X POST http://127.0.0.1:8000/api/scam-analysis \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "inputType": "text",
+    "content": "Urgent: verify now and use the new bank details immediately."
+  }'
 ```
 
-## Project Structure
+History:
 
-```
-safeflow-ai/
-├── ai_service/                 # FastAPI application
-│   ├── main.py                 # FastAPI app & endpoint definitions
-│   ├── analyzer.py             # OpenAI integration & validation
-│   ├── main_service.py         # Service layer & orchestration
-│   ├── schemas.py              # Pydantic models (AI response + API DTOs)
-│   ├── prompts.py              # System & user prompt templates
-│   ├── risk_mapper.py          # Score normalization & level mapping
-│   ├── security.py             # Input validation & injection defense
-│   ├── errors.py               # Error codes & exceptions
-│   ├── __init__.py
-│   └── .env.example            # Environment configuration template
-├── tests/                      # Test suite
-│   ├── test_risk_mapper.py     # Risk mapping tests
-│   ├── test_schema.py          # Schema validation tests
-│   ├── conftest.py             # Pytest configuration
-│   └── __init__.py
-├── model/                      # ML model demonstrations (optional)
-├── requirements.txt            # Python dependencies
-├── README.md                   # This file
-├── .gitignore                  # Git ignore rules
-└── .env                        # Local environment (not in git)
+```bash
+curl http://127.0.0.1:8000/api/analysis-history \
+  -H "Authorization: Bearer <token>"
 ```
 
-## Architecture
+## Manual Verification Flow
 
-### Dual Schema Design
+1. Open the frontend and create an account on `/signup`.
+2. Log in on `/login`.
+3. Submit text, a text PDF, or an OCR-capable image/PDF from the home page.
+4. Open `/history` and confirm the saved record appears only for that user.
+5. Click a history item and confirm the result page reopens with stored details.
 
-The service maintains strict separation between two schema layers:
+## Security Notes
 
-1. **AI Response Schema** (`ScamAiResponse`)
-   - Raw JSON contract with OpenAI
-   - Validated with Pydantic
-   - Can evolve independently
+- Passwords are hashed with Argon2 through `pwdlib`; plaintext passwords are never stored.
+- JWT secrets come from environment variables; production startup fails if the secret is missing.
+- History stores only sanitized previews and analysis metadata, not raw uploaded files or full extracted documents.
+- Frontend stores the JWT in `localStorage` for this MVP to support session restore. This is convenient for development but has an XSS trade-off; a hardened production design should move to httpOnly cookies or a stronger token strategy.
+- CORS is restricted to the configured frontend origin plus the local 5173 development hosts.
 
-2. **API Response DTO** (`ScamAnalysisResponse`)
-   - Clean contract for API clients
-   - Derived from AI response
-   - Ready for frontend consumption
+## Current Limitations
 
-### Score Normalization Pipeline
-
-```
-OpenAI Response
-    ↓
-Parse JSON
-    ↓
-Validate Schema (ScamAiResponse)
-    ↓
-Normalize Score → [0, 100] integer
-    ↓
-Recompute Risk Level (never trust model)
-    ↓
-Format Response DTO (ScamAnalysisResponse)
-    ↓
-HTTP Response
-```
-
-### Prompt Injection Defense (3 Layers)
-
-1. **System Prompt Directive**
-   - Explicitly instructs model to ignore embedded instructions
-   - Clear statement that all content is untrusted
-
-2. **Message Delimiters**
-   - User content wrapped in `BEGIN_UNTRUSTED_CONTENT` / `END_UNTRUSTED_CONTENT`
-   - Prevents content from being confused with instructions
-
-3. **Heuristic Detection**
-   - `security.is_likely_prompt_injection()` detects obvious patterns
-   - Examples: "ignore previous instructions", "system prompt", "jailbreak"
-
-## Risk Score Thresholds
-
-| Score Range | Risk Level | Meaning                       |
-| ----------- | ---------- | ----------------------------- |
-| 0–39        | **low**    | Minimal scam signals detected |
-| 40–69       | **medium** | Multiple indicators of fraud  |
-| 70–100      | **high**   | Strong evidence of scam/fraud |
+- OCR depends on a system Tesseract installation.
+- `recover-password` is currently a non-delivering MVP acknowledgement endpoint.
+- JWT logout is client-side only; there is no token revocation or refresh-token flow yet.
+- There is no rate limiting or account lockout yet.
 
 ## Error Handling
 

@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext.jsx";
 import { ROUTES } from "../../../constants/routes.js";
 import { ThemeToggle } from "../ThemeToggle/ThemeToggle.jsx";
 import menuIcon from "../../../assets/images/Menu.png";
@@ -16,6 +17,7 @@ const ROUTES_WITH_HOME_BUTTON = [
 export function Header({ onMenuClick, isDarkMode, onThemeToggle }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   const shouldShowHomeButton = ROUTES_WITH_HOME_BUTTON.includes(
     location.pathname,
@@ -49,7 +51,7 @@ export function Header({ onMenuClick, isDarkMode, onThemeToggle }) {
         <button
           className="header__button"
           type="button"
-          onClick={() => navigate(ROUTES.PROFILE)}
+          onClick={() => navigate(isAuthenticated ? ROUTES.PROFILE : ROUTES.LOGIN)}
           aria-label="Open profile"
         >
           <img

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer } from "../../components/common/PageContainer/PageContainer.jsx";
 import { Logo } from "../../components/common/Logo/Logo.jsx";
@@ -6,6 +6,8 @@ import { AuthCard } from "../../components/auth/AuthCard/AuthCard.jsx";
 import { AuthInput } from "../../components/auth/AuthInput/AuthInput.jsx";
 import { ErrorBanner } from "../../components/common/ErrorBanner/ErrorBanner.jsx";
 import { LoadingOverlay } from "../../components/common/LoadingOverlay/LoadingOverlay.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { getApiErrorMessage } from "../../services/apiClient.js";
 import { ROUTES } from "../../constants/routes.js";
 import backIcon from "../../assets/images/ArrowBack.png";
 import loginIcon from "../../assets/images/Login.png";
@@ -17,6 +19,7 @@ function isValidEmail(email) {
 
 export function SignUpPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, isInitializing, register } = useAuth();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -30,6 +33,12 @@ export function SignUpPage() {
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isInitializing && isAuthenticated) {
+      navigate(ROUTES.HOME);
+    }
+  }, [isAuthenticated, isInitializing, navigate]);
 
   const usernameError =
     touchedFields.username && !username.trim()
@@ -55,6 +64,7 @@ export function SignUpPage() {
     email.trim() &&
     isValidEmail(email) &&
     password.length >= 8;
+  const isBusy = isSubmitting || isInitializing;
 
   function handleBlur(fieldName) {
     setTouchedFields((current) => ({
@@ -74,7 +84,7 @@ export function SignUpPage() {
 
     setErrorMessage("");
 
-    if (!isFormValid) {
+    if (!isFormValid || isBusy) {
       setErrorMessage("Please complete all required fields correctly.");
       return;
     }
@@ -82,10 +92,16 @@ export function SignUpPage() {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await register({
+        email,
+        password,
+        fullName: username,
+      });
       navigate(ROUTES.HOME);
-    } catch {
-      setErrorMessage("Sign-up failed. Please try again.");
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(error, "Sign-up failed. Please try again."),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -114,7 +130,7 @@ export function SignUpPage() {
                 <AuthInput
                   placeholder="Username"
                   value={username}
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                   onChange={(event) => setUsername(event.target.value)}
                   onBlur={() => handleBlur("username")}
                   aria-invalid={Boolean(usernameError)}
@@ -130,7 +146,7 @@ export function SignUpPage() {
                   placeholder="Mail"
                   type="email"
                   value={email}
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                   onChange={(event) => setEmail(event.target.value)}
                   onBlur={() => handleBlur("email")}
                   aria-invalid={Boolean(emailError)}
@@ -146,7 +162,7 @@ export function SignUpPage() {
                   placeholder="Password"
                   type="password"
                   value={password}
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                   onChange={(event) => setPassword(event.target.value)}
                   onBlur={() => handleBlur("password")}
                   aria-invalid={Boolean(passwordError)}
@@ -160,7 +176,7 @@ export function SignUpPage() {
               <div className="auth-page__actions">
                 <button
                   type="button"
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                   onClick={() => navigate(ROUTES.LOGIN)}
                 >
                   <img src={backIcon} alt="Back" className="auth-page__icon" />
@@ -168,7 +184,7 @@ export function SignUpPage() {
 
                 <button
                   type="submit"
-                  disabled={!isFormValid || isSubmitting}
+                  disabled={!isFormValid || isBusy}
                 >
                   <img src={loginIcon} alt="Submit" className="auth-page__icon" />
                 </button>
@@ -178,7 +194,7 @@ export function SignUpPage() {
         </div>
       </PageContainer>
 
-      {isSubmitting && <LoadingOverlay message="Creating account..." />}
+      {isBusy && <LoadingOverlay message="Creating account..." />}
     </>
   );
 }

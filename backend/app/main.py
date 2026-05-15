@@ -3,6 +3,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.routes.analysis_history import router as analysis_history_router
+from app.api.routes.auth import router as auth_router
 from app.api.routes.health import router as health_router
 from app.api.routes.scam_analysis import router as scam_analysis_router
 from app.core.config import settings
@@ -17,6 +19,9 @@ LOCAL_FRONTEND_ORIGINS = [
 
 
 def create_app() -> FastAPI:
+    if settings.is_production and not settings.jwt_secret_key:
+        raise RuntimeError("JWT_SECRET_KEY is required in production.")
+
     app = FastAPI(title="SafeFlow AI Backend")
 
     app.add_middleware(
@@ -27,6 +32,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.include_router(auth_router)
+    app.include_router(analysis_history_router)
     app.include_router(health_router)
     app.include_router(scam_analysis_router)
 

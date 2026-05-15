@@ -1,176 +1,251 @@
 # SafeFlow AI Backend
 
-FastAPI backend for SafeFlow AI. Text input and text-based PDF uploads are forwarded to the AI analysis microservice, while image uploads remain on the mock path until OCR is implemented.
+FastAPI backend for SafeFlow AI. The backend supports authentication, scam analysis, and per-user analysis history while keeping the existing `POST /api/scam-analysis` contract stable.
+
+## What The Backend Does
+
+- Authenticates users with JWT Bearer tokens
+- Analyzes plain text, PDFs, and images
+- Saves authenticated analyses to persistent history
+- Keeps anonymous analysis available for the existing frontend flow
+- Redacts sensitive data in stored previews and evidence
+- Never stores uploaded files permanently for history
+
+## Tech Stack
+
+- Python 3.11+
+- FastAPI
+- Pydantic
+- SQLAlchemy 2.x
+- Alembic
+- `pwdlib` with Argon2 password hashing
+- PyJWT for access tokens
+- PyMuPDF + Pillow + pytesseract for document extraction
 
 ## Requirements
 
 - Python 3.11+
-- PowerShell or another shell capable of setting environment variables
-
-## Setup
-
-```powershell
-Set-Location backend
-& "C:/Program Files/Python313/python.exe" -m pip install -r requirements.txt
-Copy-Item .env.example .env
-```
-
-This installs the backend runtime plus the `openai` client needed when you run the local `ai_service` from the same virtual environment.
-
-Set the environment variables before starting the app:
-
-```powershell
-$env:ENVIRONMENT = "development"
-$env:FRONTEND_ORIGIN = "http://localhost:5173"
-$env:AI_SERVICE_URL = "http://127.0.0.1:8001"
-$env:AI_SERVICE_TIMEOUT_SECONDS = "60"
-```
-
-The local stack uses these fixed ports:
-
-- Frontend: `http://127.0.0.1:5173`
-- Backend: `http://127.0.0.1:8000`
-- AI service: `http://127.0.0.1:8001`
-
-## Run Locally
-
-Start each application in a separate terminal.
-
-Terminal 1: AI service
-
-```powershell
-Set-Location ..
-$env:OPENAI_API_KEY = "your-openai-key"
-& "C:/Program Files/Python313/python.exe" -m uvicorn ai_service.main:app --reload --host 127.0.0.1 --port 8001
-```
-
-If `ai_service` fails with `ModuleNotFoundError: No module named 'openai'`, reinstall dependencies in the active virtual environment with `python -m pip install -r backend/requirements.txt`.
-
-Terminal 2: backend
-
-```powershell
-Set-Location backend
-$env:ENVIRONMENT = "development"
-$env:FRONTEND_ORIGIN = "http://localhost:5173"
-$env:AI_SERVICE_URL = "http://127.0.0.1:8001"
-$env:AI_SERVICE_TIMEOUT_SECONDS = "60"
-& "C:/Program Files/Python313/python.exe" -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-Terminal 3: frontend
-
-```powershell
-Set-Location ..\frontend
-$env:VITE_API_BASE_URL = "http://127.0.0.1:8000/api"
-npm run dev
-```
-
-The API will be available at `http://127.0.0.1:8000`.
-
-OpenAPI docs are available at `http://127.0.0.1:8000/docs`.
+- Tesseract OCR installed and available in `PATH` for OCR-backed uploads
+- A configured `JWT_SECRET_KEY`
 
 ## Environment Variables
 
-- `ENVIRONMENT`: runtime environment label. Use `development` for local work.
-- `FRONTEND_ORIGIN`: allowed frontend origin for CORS.
-- `AI_SERVICE_URL`: base URL of the internal AI analysis microservice.
-- `AI_SERVICE_TIMEOUT_SECONDS`: backend timeout in seconds for responses from `ai_service`.
-
-## Endpoints
-
-- `GET /health`
-- `GET /api/health`
-- `GET /api/scam-analysis/config`
-- `POST /api/scam-analysis`
-
-## API Contract Summary
-
-`POST /api/scam-analysis` accepts either JSON for text analysis:
-
-```json
-{
-  "inputType": "text",
-  "content": "Suspicious message goes here"
-}
+```env
+ENVIRONMENT=development
+FRONTEND_ORIGIN=http://127.0.0.1:5173
+DATABASE_URL=sqlite:///./safeflow.db
+JWT_SECRET_KEY=change_this_in_production_please_use_a_long_random_value
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+AI_SERVICE_URL=http://127.0.0.1:8001
+AI_SERVICE_TIMEOUT_SECONDS=60
+ANALYSIS_MODE=ai
+OCR_ENABLED=true
+OCR_LANG=eng
+OCR_TIMEOUT_SECONDS=20
+MAX_FILE_SIZE_MB=10
+MAX_PDF_PAGES=5
+MAX_IMAGE_WIDTH=4000
+MAX_IMAGE_HEIGHT=4000
+MIN_EXTRACTED_TEXT_CHARS=20
+MAX_TEXT_LENGTH=10000
+MAX_AI_INPUT_CHARS=20000
 ```
 
-Or `multipart/form-data` using these field names:
+Production startup fails if `JWT_SECRET_KEY` is missing.
 
-- `inputType`: `text`, `pdf`, or `image`
-- `content`: optional text field, only valid for `inputType=text`
-- `file`: uploaded file, required for `inputType=pdf` or `inputType=image`
-
-## Example Requests
-
-Text JSON request:
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/scam-analysis \
-  -H "Content-Type: application/json" \
-  -d '{"inputType":"text","content":"Urgent: please verify now and use the new bank details."}'
-```
-
-Multipart file upload:
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/scam-analysis \
-  -F "inputType=pdf" \
-  -F "file=@invoice.pdf;type=application/pdf"
-```
-
-## Example Response
-
-```json
-{
-  "analysisId": "analysis_123e4567-e89b-12d3-a456-426614174000",
-  "riskScore": 86,
-  "riskLevel": "high",
-  "detectedScamType": "Payment redirection scam",
-  "explanation": "The message contains urgency, account pressure, or payment redirection cues that are commonly used in scams.",
-  "indicators": [
-    "Urgent language",
-    "Forced verification",
-    "New payment details"
-  ],
-  "recommendation": "Do not proceed with the payment or verification request. Confirm the request using a trusted contact method.",
-  "evidence": [
-    {
-      "text": "Matched phrase: urgent",
-      "reason": "Urgency and pressure language",
-      "severity": "high"
-    }
-  ],
-  "analysisMode": "ai"
-}
-```
-
-## Error Shape
-
-All application errors use this structure:
-
-```json
-{
-  "errorCode": "EMPTY_TEXT_CONTENT",
-  "message": "Text content cannot be empty.",
-  "details": {
-    "content": ["This field is required when inputType is text."]
-  }
-}
-```
-
-## Tests
-
-Run the backend tests with:
+## Local Setup
 
 ```powershell
 Set-Location backend
-& "C:/Program Files/Python313/python.exe" -m pytest
+..\.venv\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item .env.example .env
+..\.venv\Scripts\python.exe -m alembic upgrade head
 ```
 
-## Known Limitations
+## Migration Commands
 
-- OCR is not implemented yet, so image uploads still use mock analysis
-- PDF analysis works only for text-based PDFs; scanned PDFs still require OCR
-- No database yet
-- Image risk scoring is still mock-only
-- No authentication or dashboard integration yet
+Apply migrations:
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe -m alembic upgrade head
+```
+
+Create a new migration after future schema changes:
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe -m alembic revision --autogenerate -m "describe change"
+```
+
+## Run The Backend Locally
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe -m alembic upgrade head
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+API root: `http://127.0.0.1:8000`
+
+OpenAPI docs: `http://127.0.0.1:8000/docs`
+
+## Auth Endpoints
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+- `POST /api/auth/recover-password`
+
+Register request:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPassword123!",
+  "fullName": "Example User"
+}
+```
+
+Register/login response:
+
+```json
+{
+  "user": {
+    "id": "user-id",
+    "email": "user@example.com",
+    "fullName": "Example User",
+    "role": "user",
+    "createdAt": "2026-05-15T12:00:00Z"
+  },
+  "accessToken": "jwt_token",
+  "tokenType": "bearer"
+}
+```
+
+## Analysis Endpoints
+
+- `GET /api/scam-analysis/config`
+- `POST /api/scam-analysis`
+
+`POST /api/scam-analysis` accepts:
+
+- JSON text submissions: `{"inputType":"text","content":"..."}`
+- `multipart/form-data` for PDFs and images with `inputType` plus `file`
+
+Authenticated analysis automatically saves history.
+
+Anonymous analysis still returns a normal result but does not create a history record.
+
+Authenticated analysis example:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/scam-analysis \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"inputType":"text","content":"Urgent: verify now and use the new bank details immediately."}'
+```
+
+## History Endpoints
+
+- `GET /api/analysis-history`
+- `GET /api/analysis-history/{analysisId}`
+- `DELETE /api/analysis-history/{analysisId}`
+
+History list example:
+
+```bash
+curl http://127.0.0.1:8000/api/analysis-history \
+  -H "Authorization: Bearer <token>"
+```
+
+History response shape:
+
+```json
+{
+  "items": [
+    {
+      "analysisId": "analysis_123",
+      "inputType": "text",
+      "originalFilename": null,
+      "inputPreview": "Urgent: verify now and use the new bank details immediately.",
+      "riskScore": 86,
+      "riskLevel": "high",
+      "detectedScamType": "Payment redirection scam",
+      "explanation": "The message contains urgency, account pressure, or payment redirection cues that are commonly used in scams.",
+      "indicators": ["Urgent language", "New payment details"],
+      "recommendation": "Do not proceed with the payment or verification request. Confirm the request using a trusted contact method.",
+      "evidence": [
+        {
+          "text": "Please pay immediately to the [redacted-number].",
+          "reason": "Urgency and new payment details",
+          "severity": "high"
+        }
+      ],
+      "extractionMethod": "plain_text",
+      "analysisMode": "mock",
+      "createdAt": "2026-05-15T12:00:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+## Error Format
+
+All controlled application errors use:
+
+```json
+{
+  "errorCode": "INVALID_CREDENTIALS",
+  "message": "Invalid email or password.",
+  "details": {}
+}
+```
+
+Examples of auth/history error codes:
+
+- `EMAIL_ALREADY_EXISTS`
+- `INVALID_CREDENTIALS`
+- `UNAUTHORIZED`
+- `FORBIDDEN`
+- `INVALID_TOKEN`
+- `TOKEN_EXPIRED`
+- `HISTORY_ITEM_NOT_FOUND`
+- `SERVER_ERROR`
+
+## Tests
+
+Run backend tests:
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe -m pytest
+```
+
+Run only auth/history tests:
+
+```powershell
+Set-Location backend
+..\.venv\Scripts\python.exe -m pytest tests/test_auth_history.py
+```
+
+## Security Notes
+
+- Passwords are hashed with Argon2; raw passwords are never stored or logged.
+- JWTs are signed with an environment-driven secret.
+- CORS is restricted to the configured frontend origin and local development hosts.
+- History stores a short sanitized preview plus result metadata, not raw files and not the full extracted document.
+- Evidence and previews are redacted for emails, URLs, phone numbers, IBAN-like values, and long digit sequences.
+
+## Current Limitations
+
+- No refresh-token flow yet.
+- No server-side token revocation list yet.
+- No rate limiting or brute-force protection yet.
+- `recover-password` is an acknowledgement endpoint only.
+- OCR requires Tesseract on the host machine.

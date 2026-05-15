@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext.jsx";
 import { ROUTES } from "../../../constants/routes.js";
 import "./Sidebar.css";
 import menuInfo from "../../../assets/images/Info.png";
@@ -8,9 +9,19 @@ import menuLogout from "../../../assets/images/Logout.png";
 
 export function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
 
   function handleNavigate(path) {
     navigate(path);
+    onClose();
+  }
+
+  async function handleExit() {
+    if (isAuthenticated) {
+      await logout();
+    }
+
+    navigate(ROUTES.LOGIN);
     onClose();
   }
 
@@ -32,9 +43,9 @@ export function Sidebar({ isOpen, onClose }) {
         <img src={menuLayers} alt="Layers icon" className="sidebar__icon" />
         History
       </button>
-      <button className="sidebar__item" type="button" onClick={() => handleNavigate(ROUTES.LOGIN)}>
+      <button className="sidebar__item" type="button" onClick={handleExit}>
         <img src={menuLogout} alt="Logout icon" className="sidebar__icon" />
-        Exit
+        {isAuthenticated ? "Logout" : "Login"}
       </button>
     </nav>
   );

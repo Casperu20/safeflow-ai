@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageContainer } from "../../components/common/PageContainer/PageContainer.jsx";
 import { Logo } from "../../components/common/Logo/Logo.jsx";
@@ -6,6 +6,8 @@ import { AuthCard } from "../../components/auth/AuthCard/AuthCard.jsx";
 import { AuthInput } from "../../components/auth/AuthInput/AuthInput.jsx";
 import { ErrorBanner } from "../../components/common/ErrorBanner/ErrorBanner.jsx";
 import { LoadingOverlay } from "../../components/common/LoadingOverlay/LoadingOverlay.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { getApiErrorMessage } from "../../services/apiClient.js";
 import { ROUTES } from "../../constants/routes.js";
 import newUserIcon from "../../assets/images/Userplus.png";
 import loginIcon from "../../assets/images/Login.png";
@@ -13,19 +15,26 @@ import "./LoginPage.css";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, isInitializing, login } = useAuth();
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [touchedFields, setTouchedFields] = useState({
-    username: false,
+    email: false,
     password: false,
   });
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const usernameError =
-    touchedFields.username && !username.trim()
-      ? "Username is required."
+  useEffect(() => {
+    if (!isInitializing && isAuthenticated) {
+      navigate(ROUTES.HOME);
+    }
+  }, [isAuthenticated, isInitializing, navigate]);
+
+  const emailError =
+    touchedFields.email && !email.trim()
+      ? "Email is required."
       : "";
 
   const passwordError =
@@ -33,7 +42,8 @@ export function LoginPage() {
       ? "Password is required."
       : "";
 
-  const isFormValid = username.trim() && password.trim();
+  const isFormValid = email.trim() && password.trim();
+  const isBusy = isSubmitting || isInitializing;
 
   function handleBlur(fieldName) {
     setTouchedFields((current) => ({
@@ -46,13 +56,13 @@ export function LoginPage() {
     event.preventDefault();
 
     setTouchedFields({
-      username: true,
+      email: true,
       password: true,
     });
 
     setErrorMessage("");
 
-    if (!isFormValid) {
+    if (!isFormValid || isBusy) {
       setErrorMessage("Please complete all required fields.");
       return;
     }
@@ -60,10 +70,12 @@ export function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await login({ email, password });
       navigate(ROUTES.HOME);
-    } catch {
-      setErrorMessage("Login failed. Please try again.");
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(error, "Login failed. Please try again."),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -86,16 +98,17 @@ export function LoginPage() {
             <form className="login-form" onSubmit={handleSubmit} noValidate>
               <div className="login-form__field">
                 <AuthInput
-                  placeholder="Username"
-                  value={username}
-                  disabled={isSubmitting}
-                  onChange={(event) => setUsername(event.target.value)}
-                  onBlur={() => handleBlur("username")}
-                  aria-invalid={Boolean(usernameError)}
+                  placeholder="Email"
+                  type="email"
+                  value={email}
+                  disabled={isBusy}
+                  onChange={(event) => setEmail(event.target.value)}
+                  onBlur={() => handleBlur("email")}
+                  aria-invalid={Boolean(emailError)}
                 />
 
-                {usernameError && (
-                  <p className="login-form__error">{usernameError}</p>
+                {emailError && (
+                  <p className="login-form__error">{emailError}</p>
                 )}
               </div>
 
@@ -104,7 +117,7 @@ export function LoginPage() {
                   placeholder="Password"
                   type="password"
                   value={password}
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                   onChange={(event) => setPassword(event.target.value)}
                   onBlur={() => handleBlur("password")}
                   aria-invalid={Boolean(passwordError)}
@@ -118,7 +131,7 @@ export function LoginPage() {
               <button
                 className="auth-page__link"
                 type="button"
-                disabled={isSubmitting}
+                disabled={isBusy}
                 onClick={() => navigate(ROUTES.RECOVER_PASSWORD)}
               >
                 Forgot password?
@@ -127,7 +140,7 @@ export function LoginPage() {
               <div className="auth-page__actions">
                 <button
                   type="button"
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                   onClick={() => navigate(ROUTES.SIGN_UP)}
                 >
                   <img src={newUserIcon} alt="New user icon" />
@@ -135,7 +148,7 @@ export function LoginPage() {
 
                 <button
                   type="submit"
-                  disabled={!isFormValid || isSubmitting}
+                  disabled={!isFormValid || isBusy}
                 >
                   <img src={loginIcon} alt="Login icon" />
                 </button>
@@ -145,7 +158,7 @@ export function LoginPage() {
         </div>
       </PageContainer>
 
-      {isSubmitting && <LoadingOverlay message="Logging in..." />}
+      {isBusy && <LoadingOverlay message="Logging in..." />}
     </>
   );
 }
