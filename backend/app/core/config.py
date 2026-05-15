@@ -1,5 +1,12 @@
 from dataclasses import dataclass
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(BACKEND_DIR / ".env", override=False)
 
 
 def _get_env_bool(name: str, default: bool) -> bool:

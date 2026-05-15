@@ -148,7 +148,11 @@ class AuthService:
             status_code=500,
             error_code="SERVER_ERROR",
             message="Authentication is not configured on the backend.",
-            details={},
+            details={
+                "auth": [
+                    "Set JWT_SECRET_KEY in backend/.env or in the process environment and restart the backend."
+                ]
+            },
         )
 
 
