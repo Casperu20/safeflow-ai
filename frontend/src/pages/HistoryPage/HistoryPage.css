@@ -8,6 +8,7 @@
   margin: 16px 0 56px;
   font-size: 72px;
   color: var(--color-primary);
+  transition: color 0.2s ease;
 }
 
 .history-page__list {
@@ -16,6 +17,21 @@
   flex-direction: column;
   align-items: center;
   gap: 28px;
+}
+
+.history-page__empty {
+  width: min(1000px, 100%);
+  min-height: 120px;
+  border-radius: 8px;
+  background-color: var(--color-input-bg);
+  color: var(--color-muted-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  font-size: 24px;
+  font-style: italic;
+  text-align: center;
 }
 
 html[data-theme="dark"] .history-page h1 {

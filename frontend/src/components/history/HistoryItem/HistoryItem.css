@@ -6,7 +6,53 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  gap: 24px;
+  padding: 20px 24px;
+  color: var(--color-text);
+}
+
+.history-item__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item__title {
+  margin: 0;
   font-size: 26px;
   font-style: italic;
+  font-weight: 600;
+}
+
+.history-item__date {
+  margin: 0;
+  font-size: 18px;
+  color: var(--color-muted-text);
+}
+
+.history-item__badge {
+  min-width: 120px;
+  border-radius: 999px;
+  padding: 10px 18px;
+  color: var(--color-white);
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.history-item__badge--safe {
+  background-color: var(--color-risk-safe);
+}
+
+.history-item__badge--medium {
+  background-color: var(--color-risk-medium);
+}
+
+.history-item__badge--unsafe {
+  background-color: var(--color-risk-unsafe);
+}
+
+html[data-theme="dark"] .history-item {
+  background-color: var(--color-input-bg);
+  color: var(--color-text);
 }
