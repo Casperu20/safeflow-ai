@@ -40,3 +40,36 @@
 .history-item__meta {
   align-items: flex-end;
 }
+
+.history-item__date {
+  margin: 0;
+  font-size: 18px;
+  color: var(--color-muted-text);
+}
+
+.history-item__badge {
+  min-width: 120px;
+  border-radius: 999px;
+  padding: 10px 18px;
+  color: var(--color-white);
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.history-item__badge--safe {
+  background-color: var(--color-risk-safe);
+}
+
+.history-item__badge--medium {
+  background-color: var(--color-risk-medium);
+}
+
+.history-item__badge--unsafe {
+  background-color: var(--color-risk-unsafe);
+}
+
+html[data-theme="dark"] .history-item {
+  background-color: var(--color-input-bg);
+  color: var(--color-text);
+}

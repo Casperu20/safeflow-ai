@@ -8,6 +8,7 @@
   margin: 16px 0 56px;
   font-size: 72px;
   color: var(--color-primary);
+  transition: color 0.2s ease;
 }
 
 .history-page__list {

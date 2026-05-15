@@ -1,3 +1,4 @@
+import { formatDate } from "../../../utils/formatDate.js";
 import "./HistoryItem.css";
 
 function formatHistoryDate(value) {
