@@ -96,7 +96,8 @@ export function HistoryPage() {
           />
           {!isLoading && historyItems.length === 0 && (
             <p className="history-page__empty">
-              No saved analyses yet. Sign in, run an analysis, and it will appear here.
+              No saved analyses yet. Sign in, run an analysis, and it will
+              appear here.
             </p>
           )}
           <div className="history-page__list">
@@ -111,7 +112,9 @@ export function HistoryPage() {
           </div>
         </div>
       </PageContainer>
-      {(isInitializing || isLoading) && <LoadingOverlay message={loadingMessage} />}
+      {(isInitializing || isLoading) && (
+        <LoadingOverlay message={loadingMessage} />
+      )}
     </>
   );
 }

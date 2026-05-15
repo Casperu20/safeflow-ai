@@ -33,14 +33,10 @@ export function LoginPage() {
   }, [isAuthenticated, isInitializing, navigate]);
 
   const emailError =
-    touchedFields.email && !email.trim()
-      ? "Email is required."
-      : "";
+    touchedFields.email && !email.trim() ? "Email is required." : "";
 
   const passwordError =
-    touchedFields.password && !password.trim()
-      ? "Password is required."
-      : "";
+    touchedFields.password && !password.trim() ? "Password is required." : "";
 
   const isFormValid = email.trim() && password.trim();
   const isBusy = isSubmitting || isInitializing;
@@ -146,10 +142,7 @@ export function LoginPage() {
                   <img src={newUserIcon} alt="New user icon" />
                 </button>
 
-                <button
-                  type="submit"
-                  disabled={!isFormValid || isBusy}
-                >
+                <button type="submit" disabled={!isFormValid || isBusy}>
                   <img src={loginIcon} alt="Login icon" />
                 </button>
               </div>

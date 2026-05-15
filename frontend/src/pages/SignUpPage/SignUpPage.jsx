@@ -41,9 +41,7 @@ export function SignUpPage() {
   }, [isAuthenticated, isInitializing, navigate]);
 
   const usernameError =
-    touchedFields.username && !username.trim()
-      ? "Username is required."
-      : "";
+    touchedFields.username && !username.trim() ? "Username is required." : "";
 
   const emailError =
     touchedFields.email && !email.trim()
@@ -182,11 +180,12 @@ export function SignUpPage() {
                   <img src={backIcon} alt="Back" className="auth-page__icon" />
                 </button>
 
-                <button
-                  type="submit"
-                  disabled={!isFormValid || isBusy}
-                >
-                  <img src={loginIcon} alt="Submit" className="auth-page__icon" />
+                <button type="submit" disabled={!isFormValid || isBusy}>
+                  <img
+                    src={loginIcon}
+                    alt="Submit"
+                    className="auth-page__icon"
+                  />
                 </button>
               </div>
             </form>

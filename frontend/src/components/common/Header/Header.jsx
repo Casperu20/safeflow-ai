@@ -51,7 +51,9 @@ export function Header({ onMenuClick, isDarkMode, onThemeToggle }) {
         <button
           className="header__button"
           type="button"
-          onClick={() => navigate(isAuthenticated ? ROUTES.PROFILE : ROUTES.LOGIN)}
+          onClick={() =>
+            navigate(isAuthenticated ? ROUTES.PROFILE : ROUTES.LOGIN)
+          }
           aria-label="Open profile"
         >
           <img

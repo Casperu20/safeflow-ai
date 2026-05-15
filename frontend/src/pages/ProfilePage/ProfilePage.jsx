@@ -55,10 +55,17 @@ export function ProfilePage() {
             onClose={() => setErrorMessage("")}
           />
           <AuthCard>
-            <AuthInput value={user?.fullName || "No display name set"} readOnly />
+            <AuthInput
+              value={user?.fullName || "No display name set"}
+              readOnly
+            />
             <AuthInput value={user?.email || "No email available"} readOnly />
             <AuthInput value={`Joined ${joinedDate}`} readOnly />
-            <button className="auth-page__link" type="button" onClick={handleLogout}>
+            <button
+              className="auth-page__link"
+              type="button"
+              onClick={handleLogout}
+            >
               Log out
             </button>
           </AuthCard>

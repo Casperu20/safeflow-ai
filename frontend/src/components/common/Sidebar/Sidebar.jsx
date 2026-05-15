@@ -31,15 +31,27 @@ export function Sidebar({ isOpen, onClose }) {
 
   return (
     <nav className="sidebar">
-      <button className="sidebar__item" type="button" onClick={() => handleNavigate(ROUTES.PRIVACY)}>
+      <button
+        className="sidebar__item"
+        type="button"
+        onClick={() => handleNavigate(ROUTES.PRIVACY)}
+      >
         <img src={menuInfo} alt="Info icon" className="sidebar__icon" />
         Privacy
       </button>
-      <button className="sidebar__item" type="button" onClick={() => handleNavigate(ROUTES.ABOUT)}>
+      <button
+        className="sidebar__item"
+        type="button"
+        onClick={() => handleNavigate(ROUTES.ABOUT)}
+      >
         <img src={menuBook} alt="Book icon" className="sidebar__icon" />
         About
       </button>
-      <button className="sidebar__item" type="button" onClick={() => handleNavigate(ROUTES.HISTORY)}>
+      <button
+        className="sidebar__item"
+        type="button"
+        onClick={() => handleNavigate(ROUTES.HISTORY)}
+      >
         <img src={menuLayers} alt="Layers icon" className="sidebar__icon" />
         History
       </button>

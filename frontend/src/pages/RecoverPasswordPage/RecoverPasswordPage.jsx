@@ -52,11 +52,15 @@ export function RecoverPasswordPage() {
     try {
       const response = await recoverPassword({ email });
       setSuccessMessage(
-        response.message || "If an account exists for this email, a recovery code will be sent.",
+        response.message ||
+          "If an account exists for this email, a recovery code will be sent.",
       );
     } catch (error) {
       setErrorMessage(
-        getApiErrorMessage(error, "Password recovery failed. Please try again."),
+        getApiErrorMessage(
+          error,
+          "Password recovery failed. Please try again.",
+        ),
       );
     } finally {
       setIsSubmitting(false);
@@ -72,7 +76,8 @@ export function RecoverPasswordPage() {
           <h1>SafeFlow</h1>
 
           <p className="auth-page__subtitle">
-            Enter the account's mail below. If the account exists, a code will be sent.
+            Enter the account's mail below. If the account exists, a code will
+            be sent.
           </p>
 
           <ErrorBanner
@@ -87,7 +92,11 @@ export function RecoverPasswordPage() {
           )}
 
           <AuthCard>
-            <form className="recover-password-form" onSubmit={handleSubmit} noValidate>
+            <form
+              className="recover-password-form"
+              onSubmit={handleSubmit}
+              noValidate
+            >
               <div className="recover-password-form__field">
                 <AuthInput
                   placeholder="Mail"
@@ -113,11 +122,12 @@ export function RecoverPasswordPage() {
                   <img src={backIcon} alt="Back" className="auth-page__icon" />
                 </button>
 
-                <button
-                  type="submit"
-                  disabled={!isFormValid || isSubmitting}
-                >
-                  <img src={loginIcon} alt="Submit" className="auth-page__icon" />
+                <button type="submit" disabled={!isFormValid || isSubmitting}>
+                  <img
+                    src={loginIcon}
+                    alt="Submit"
+                    className="auth-page__icon"
+                  />
                 </button>
               </div>
             </form>
