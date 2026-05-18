@@ -1,0 +1,33 @@
+.history-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.history-page h1 {
+  margin: 16px 0 56px;
+  font-size: 72px;
+  color: var(--color-primary);
+  transition: color 0.2s ease;
+}
+
+.history-page__list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.history-page__empty {
+  margin: 0 0 32px;
+  max-width: 720px;
+  color: var(--color-accent);
+  font-size: 24px;
+  font-style: italic;
+  text-align: center;
+}
+
+html[data-theme="dark"] .history-page h1 {
+  color: var(--color-accent);
+}

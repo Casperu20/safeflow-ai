@@ -1,0 +1,15 @@
+.result-score {
+  font-size: 72px;
+}
+
+.result-score--safe {
+  color: var(--color-risk-safe);
+}
+
+.result-score--medium {
+  color: var(--color-risk-medium);
+}
+
+.result-score--unsafe {
+  color: var(--color-risk-unsafe);
+}

@@ -1,0 +1,8 @@
+.app-layout {
+  min-height: 100vh;
+  background-color: var(--color-page-bg);
+}
+
+.app-layout__main {
+  padding: 16px 0;
+}
