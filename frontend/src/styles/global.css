@@ -15,16 +15,16 @@ body {
   min-height: 100vh;
 }
 
-button,
-input,
-textarea {
-  font: inherit;
-}
-
 html,
 body {
   background-color: var(--color-page-bg);
   color: var(--color-text);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
 }
 
 body,

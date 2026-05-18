@@ -1,38 +1,31 @@
 import { apiClient } from "./apiClient.js";
+import { normalizeAnalysisResponse } from "./analysisService.js";
 
-export async function getHistory() {
-  const response = await apiClient.get("/history");
-
-  return response.data.map(normalizeHistoryItem);
+export async function getHistory(params = {}) {
+  const response = await apiClient.get("/analysis-history", { params });
+  return response.data;
 }
 
-function normalizeHistoryItem(item) {
-  return {
-    id: item.id || item.analysisId || crypto.randomUUID(),
-    title: item.title || item.detectedScamType || "Scam analysis",
-    analyzedAt: item.analyzedAt || item.createdAt || item.date || "",
-    riskLevel: normalizeRiskLevel(item.riskLevel),
-  };
+export async function getHistoryItem(analysisId) {
+  const response = await apiClient.get(`/analysis-history/${analysisId}`);
+  return response.data;
 }
 
-function normalizeRiskLevel(riskLevel) {
-  if (!riskLevel) {
-    return "medium";
-  }
+export async function deleteHistoryItem(analysisId) {
+  const response = await apiClient.delete(`/analysis-history/${analysisId}`);
+  return response.data;
+}
 
-  const normalizedRiskLevel = riskLevel.toLowerCase();
-
-  if (normalizedRiskLevel === "low" || normalizedRiskLevel === "safe") {
-    return "safe";
-  }
-
-  if (normalizedRiskLevel === "medium") {
-    return "medium";
-  }
-
-  if (normalizedRiskLevel === "high" || normalizedRiskLevel === "unsafe") {
-    return "unsafe";
-  }
-
-  return "medium";
+export function normalizeHistoryItemToResult(item) {
+  return normalizeAnalysisResponse({
+    analysisId: item.analysisId,
+    riskScore: item.riskScore,
+    riskLevel: item.riskLevel,
+    explanation: item.explanation,
+    recommendation: item.recommendation,
+    detectedScamType: item.detectedScamType,
+    indicators: item.indicators,
+    evidence: item.evidence,
+    analysisMode: item.analysisMode,
+  });
 }

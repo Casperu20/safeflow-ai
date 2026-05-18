@@ -1,23 +1,40 @@
 import { formatDate } from "../../../utils/formatDate.js";
 import "./HistoryItem.css";
 
-const RISK_LABELS = {
-  safe: "Safe",
-  medium: "Medium",
-  unsafe: "Unsafe",
-};
+function formatHistoryDate(value) {
+  return new Date(value).toLocaleDateString();
+}
 
-export function HistoryItem({ item }) {
+function buildHistoryTitle(item) {
+  if (item.detectedScamType) {
+    return item.detectedScamType;
+  }
+
+  return `${item.inputType.toUpperCase()} analysis`;
+}
+
+export function HistoryItem({ item, onOpen, disabled = false }) {
   return (
-    <article className="history-item">
-      <div className="history-item__content">
-        <h2 className="history-item__title">{item.title}</h2>
-        <p className="history-item__date">{formatDate(item.analyzedAt)}</p>
-      </div>
-
-      <span className={`history-item__badge history-item__badge--${item.riskLevel}`}>
-        {RISK_LABELS[item.riskLevel] || "Medium"}
+    <button
+      className="history-item"
+      type="button"
+      onClick={() => onOpen(item.analysisId)}
+      disabled={disabled}
+    >
+      <span className="history-item__content">
+        <strong className="history-item__title">
+          {buildHistoryTitle(item)}
+        </strong>
+        <span className="history-item__preview">
+          {item.inputPreview || "No preview available."}
+        </span>
       </span>
-    </article>
+      <span className="history-item__meta">
+        <span className="history-item__date">
+          {formatHistoryDate(item.createdAt)}
+        </span>
+        <strong>{item.riskScore}%</strong>
+      </span>
+    </button>
   );
 }

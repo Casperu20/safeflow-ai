@@ -1,4 +1,6 @@
-import { apiClient } from "./apiClient.js";
+import { apiClient, getApiErrorMessage } from "./apiClient.js";
+
+export { getApiErrorMessage };
 
 const USE_MOCK = false;
 
@@ -38,11 +40,14 @@ async function analyzeFile(file, inputType) {
   return normalizeAnalysisResponse(response.data);
 }
 
-function normalizeAnalysisResponse(data) {
+export function normalizeAnalysisResponse(data) {
   const explanation = data.explanation || "";
   const recommendation = data.recommendation || "";
   const riskScore = data.riskScore ?? 0;
-  const normalizedRiskLevel = normalizeBackendRiskLevel(data.riskLevel, riskScore);
+  const normalizedRiskLevel = normalizeBackendRiskLevel(
+    data.riskLevel,
+    riskScore,
+  );
 
   return {
     analysisId: data.analysisId || crypto.randomUUID(),
@@ -104,7 +109,10 @@ function buildAnalysisMessage(explanation, recommendation) {
 async function analyzeInputMock(payload) {
   await new Promise((resolve) => setTimeout(resolve, 600));
 
-  if (payload.inputType === "text" && payload.content.toLowerCase().includes("urgent")) {
+  if (
+    payload.inputType === "text" &&
+    payload.content.toLowerCase().includes("urgent")
+  ) {
     return {
       analysisId: crypto.randomUUID(),
       score: 25,

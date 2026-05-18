@@ -6,6 +6,8 @@ import { AuthCard } from "../../components/auth/AuthCard/AuthCard.jsx";
 import { AuthInput } from "../../components/auth/AuthInput/AuthInput.jsx";
 import { ErrorBanner } from "../../components/common/ErrorBanner/ErrorBanner.jsx";
 import { LoadingOverlay } from "../../components/common/LoadingOverlay/LoadingOverlay.jsx";
+import { getApiErrorMessage } from "../../services/apiClient.js";
+import { recoverPassword } from "../../services/authService.js";
 import { ROUTES } from "../../constants/routes.js";
 import backIcon from "../../assets/images/ArrowBack.png";
 import loginIcon from "../../assets/images/Login.png";
@@ -48,10 +50,18 @@ export function RecoverPasswordPage() {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      setSuccessMessage("If an account exists for this email, a recovery code will be sent.");
-    } catch {
-      setErrorMessage("Password recovery failed. Please try again.");
+      const response = await recoverPassword({ email });
+      setSuccessMessage(
+        response.message ||
+          "If an account exists for this email, a recovery code will be sent.",
+      );
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(
+          error,
+          "Password recovery failed. Please try again.",
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -66,7 +76,8 @@ export function RecoverPasswordPage() {
           <h1>SafeFlow</h1>
 
           <p className="auth-page__subtitle">
-            Enter the account's mail below. If the account exists, a code will be sent.
+            Enter the account's mail below. If the account exists, a code will
+            be sent.
           </p>
 
           <ErrorBanner
@@ -81,7 +92,11 @@ export function RecoverPasswordPage() {
           )}
 
           <AuthCard>
-            <form className="recover-password-form" onSubmit={handleSubmit} noValidate>
+            <form
+              className="recover-password-form"
+              onSubmit={handleSubmit}
+              noValidate
+            >
               <div className="recover-password-form__field">
                 <AuthInput
                   placeholder="Mail"
@@ -107,11 +122,12 @@ export function RecoverPasswordPage() {
                   <img src={backIcon} alt="Back" className="auth-page__icon" />
                 </button>
 
-                <button
-                  type="submit"
-                  disabled={!isFormValid || isSubmitting}
-                >
-                  <img src={loginIcon} alt="Submit" className="auth-page__icon" />
+                <button type="submit" disabled={!isFormValid || isSubmitting}>
+                  <img
+                    src={loginIcon}
+                    alt="Submit"
+                    className="auth-page__icon"
+                  />
                 </button>
               </div>
             </form>

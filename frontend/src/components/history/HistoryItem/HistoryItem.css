@@ -6,22 +6,39 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 20px 24px;
-  color: var(--color-text);
+  padding: 0 24px;
+  border: none;
+  font-size: 26px;
+  font-style: italic;
+  text-align: left;
+  cursor: pointer;
 }
 
-.history-item__content {
+.history-item:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.history-item__content,
+.history-item__meta {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .history-item__title {
-  margin: 0;
-  font-size: 26px;
-  font-style: italic;
-  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.history-item__preview,
+.history-item__date {
+  color: var(--color-accent);
+  font-size: 18px;
+  font-style: normal;
+}
+
+.history-item__meta {
+  align-items: flex-end;
 }
 
 .history-item__date {

@@ -20,15 +20,9 @@
 }
 
 .history-page__empty {
-  width: min(1000px, 100%);
-  min-height: 120px;
-  border-radius: 8px;
-  background-color: var(--color-input-bg);
-  color: var(--color-muted-text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
+  margin: 0 0 32px;
+  max-width: 720px;
+  color: var(--color-accent);
   font-size: 24px;
   font-style: italic;
   text-align: center;

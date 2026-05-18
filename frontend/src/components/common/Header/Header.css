@@ -25,7 +25,11 @@
 }
 
 .header__menu-icon,
-.header__icon,
+.header__icon {
+  display: block;
+  object-fit: contain;
+}
+
 .header__profile-icon {
   display: block;
   object-fit: contain;

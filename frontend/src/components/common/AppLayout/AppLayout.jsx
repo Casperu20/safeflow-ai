@@ -15,12 +15,7 @@ export function AppLayout({ children }) {
         isDarkMode={isDarkMode}
         onThemeToggle={toggleTheme}
       />
-
-      <Sidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <main className="app-layout__main">{children}</main>
     </div>
   );

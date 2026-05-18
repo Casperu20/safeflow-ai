@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext.jsx";
 import { ROUTES } from "../../../constants/routes.js";
 import { ThemeToggle } from "../ThemeToggle/ThemeToggle.jsx";
 import menuIcon from "../../../assets/images/Menu.png";
@@ -16,8 +17,11 @@ const ROUTES_WITH_HOME_BUTTON = [
 export function Header({ onMenuClick, isDarkMode, onThemeToggle }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
-  const shouldShowHomeButton = ROUTES_WITH_HOME_BUTTON.includes(location.pathname);
+  const shouldShowHomeButton = ROUTES_WITH_HOME_BUTTON.includes(
+    location.pathname,
+  );
 
   return (
     <header className="header">
@@ -30,11 +34,7 @@ export function Header({ onMenuClick, isDarkMode, onThemeToggle }) {
         >
           <img src={menuIcon} alt="Menu icon" className="header__menu-icon" />
         </button>
-
-        <ThemeToggle
-          isDarkMode={isDarkMode}
-          onToggle={onThemeToggle}
-        />
+        <ThemeToggle isDarkMode={isDarkMode} onToggle={onThemeToggle} />
       </div>
 
       <div className="header__right-actions">
@@ -48,14 +48,19 @@ export function Header({ onMenuClick, isDarkMode, onThemeToggle }) {
             <img src={arrowBackIcon} alt="Home icon" className="header__icon" />
           </button>
         )}
-
         <button
           className="header__button"
           type="button"
-          onClick={() => navigate(ROUTES.PROFILE)}
+          onClick={() =>
+            navigate(isAuthenticated ? ROUTES.PROFILE : ROUTES.LOGIN)
+          }
           aria-label="Open profile"
         >
-          <img src={userIcon} alt="Profile icon" className="header__profile-icon" />
+          <img
+            src={userIcon}
+            alt="Profile icon"
+            className="header__profile-icon"
+          />
         </button>
       </div>
     </header>
