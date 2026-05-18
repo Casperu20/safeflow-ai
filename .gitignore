@@ -274,6 +274,8 @@ ai_service/.env
 # VS Code
 .vscode/
 
+ai_service\.env
+
 # Frontend
 frontend/dist/
 frontend/build/
